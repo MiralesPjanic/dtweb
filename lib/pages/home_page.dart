@@ -113,7 +113,7 @@ class _HomePageState extends State<HomePage> {
             ? bannerAd2.load()
             : debugPrint("Banner Ad IOS not loaded");
 
-    checkAds();
+    // checkAds();
     debugPrint("====>" + SharedPrefe.pic.toString());
     super.initState();
   }
@@ -221,7 +221,7 @@ class _HomePageState extends State<HomePage> {
                                 //       .toString());
                                 // }
                                 // setState(() {});
-                                checkAds();
+                                // checkAds();
                                 if (objectBottomMenu.floatingValueCurrent ==
                                     true) {
                                   objectBottomMenu.floatingOnOff(
@@ -861,7 +861,7 @@ class _HomePageState extends State<HomePage> {
                                 selectedItemColor: colorAccent,
                                 unselectedItemColor: colorAccent,
                                 onTap: (i) async {
-                                  checkAds();
+                                  // checkAds();
                                   if (objectBottomMenu.floatingValueCurrent ==
                                       true) {
                                     objectBottomMenu.floatingOnOff(
