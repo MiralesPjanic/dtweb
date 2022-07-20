@@ -1,0 +1,30 @@
+{
+    "Welcome back," : "Welcome back,",
+    "Enter your mobile number to login" : "Enter your mobile number to login",
+    "Enter your mobile number" : "Enter your mobile number",
+    "Login": "Login",
+    "or":"or",
+    "Login With Google":"Login With Google",
+    "Login With Facebook":"Login With Facebook",
+    "Please Login":"Please Login",
+    "Verify Phone Number": "Verify Phone Number",
+    "We have sent code to your number": "We have sent code to your number",
+    "Code expire soon: ": "Code expire soon: ",
+    "Confirm": "Confirm",
+    "Resend":"Resend",
+    "Skip":"Skip",
+    "Done": "Done",
+    "Next": "Next",
+    "Ooops":"Ooops",
+    "No Internet Connection Found":"No Internet Connection Found",
+    "Check Your Connection":"Check Your Connection",
+    "Select Preferred Language": "Select Preferred Language",
+    "Logout":"Logout",
+    "Yes":"Yes",
+    "No":"No",
+    "are you sure logout": "are you sure logout"
+
+    
+
+    
+    }

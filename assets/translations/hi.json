@@ -1,0 +1,30 @@
+{
+    "Welcome back," : "वापसी पर स्वागत है,",
+    "Enter your mobile number to login" : "लॉगिन करने के लिए अपना मोबाइल नंबर दर्ज करें",
+    "Enter your mobile number" : "अपना मोबाइल नंबर दर्ज करें",
+    "Login": "लॉग इन करें",
+    "or":"या",
+    "Login With Google":"गूगल के साथ लॉगिन करें",
+    "Login With Facebook":"फेसबुक के साथ लॉगिन करें",
+    "Please Login":"कृपया लॉगिन करें",
+    "We have sent code to your number":"हमने आपके नंबर पर कोड भेज दिया है",
+    "Code expire soon: ": "कोड जल्द ही समाप्त हो जाएगा:",
+    "Confirm": "पुष्टि करना",
+    "Resend":"पुन: भेजें",
+    "Skip":"छोडना",
+    "Done": "पूर्ण",
+    "Next": "अगला",
+    "Ooops":"ओह",
+    "No Internet Connection Found":"कोई इंटरनेट कनेक्शन नहीं मिला",
+    "Check Your Connection":"अपना कनेक्शन जांचें",
+    "Select Preferred Language": "पसंदीदा भाषा चुनें",
+    "Logout":"लॉग आउट",
+    "Yes":"हां",
+    "No":"नहीं",
+    "are you sure logout": "क्या आप निश्चित रूप से लॉगआउट हैं"
+
+    
+    
+        
+    
+    }

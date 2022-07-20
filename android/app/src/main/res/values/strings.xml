@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding= "utf-8"?>
+
+<resources>
+
+<string name="app_name">DTWeb</string>
+
+<string name="facebook_app_id">579221130193370</string>
+<string name="fb_login_protocol_scheme">fb579221130193370</string>
+<string name="facebook_client_token">cb86d05cc91d65676b5c85ff2056e564</string>
+
+
+
+
+</resources>

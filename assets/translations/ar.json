@@ -1,0 +1,29 @@
+{
+    "Welcome back," : "مرحبًا بعودتك،",
+    "Enter your mobile number to login" : "أدخل رقم هاتفك المحمول لتسجيل الدخول",
+    "Enter your mobile number" : "أدخل رقم هاتفك المحمول",
+    "Login": "تسجيل الدخول",
+    "or":"أو",
+    "Login With Google":"تسجيل الدخول عبر جوجل",
+    "Login With Facebook":"تسجيل الدخول باستخدام الفيسبوك",
+    "Please Login":"الرجاء تسجيل الدخول",
+    "Verify Phone Number": "تحقق من رقم الهاتف",
+    "We have sent code to your number": "لقد أرسلنا الرمز إلى رقمك",
+    "Code expire soon: ": "تنتهي صلاحية الرمز قريبًا:",
+    "Confirm": "يتأكد",
+    "Resend":"إعادة إرسال",
+    "Skip":"يتخطى",
+    "Done": "منتهي",
+    "Next": "التالي",
+    "Ooops":"عفوًا",
+    "No Internet Connection Found":"لم يتم العثور على اتصال إنترنت",
+    "Check Your Connection":"تحقق من اتصالك",
+    "Select Preferred Language": "حدد اللغة المفضلة",
+    "Logout":"تسجيل خروج",
+    "Yes":"نعم",
+    "No":"لا",
+    "are you sure logout": "هل أنت متأكد من تسجيل الخروج"
+    
+
+    
+    }
