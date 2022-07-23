@@ -676,136 +676,121 @@ class _HomePageState extends State<HomePage> {
                           adContiner: adContainer,
                           webViewProvider: webViewProvider)
                       : null,
-              body: Column(
-                children: [
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        Consumer<WebViewProvider>(
-                            builder: (context, object, widget) {
-                          return Consumer<HomePageProvider>(
-                              builder: (context, objectProgress, widget) {
-                            webViewProvider.changeUrl(
-                                oldUrl: ApiMethods
-                                    .getSettingsData!.result[0].baseUrl);
-                            return InAppWebView(
-                              key: webViewKey,
-                              initialUrlRequest: URLRequest(
-                                  url: Uri.parse(object.currentUrl.toString())),
-                              initialOptions: options,
-                              pullToRefreshController: ApiMethods
-                                          .getSettingsData!
-                                          .result[0]
-                                          .pullToRefresh
-                                          .toString() ==
-                                      "1"
-                                  ? pullToRefreshController
-                                  : null,
-                              onWebViewCreated: (controller) {
-                                debugPrint("im in on Web View Created");
-                                webViewController = controller;
-                              },
-                              androidOnGeolocationPermissionsShowPrompt:
-                                  (InAppWebViewController controller,
-                                      String origin) async {
-                                return GeolocationPermissionShowPromptResponse(
-                                    origin: origin, allow: true, retain: true);
-                              },
-                              onLoadStart: (controller, url) {
-                                checkUserConnection().then((value) {
-                                  return null;
-                                });
-                                setState(() {});
-                              },
-                              androidOnPermissionRequest:
-                                  (controller, origin, resources) async {
-                                return PermissionRequestResponse(
-                                    resources: resources,
-                                    action:
-                                        PermissionRequestResponseAction.GRANT);
-                              },
-                              shouldOverrideUrlLoading:
-                                  (controller, navigationAction) async {
-                                var uri = navigationAction.request.url!;
+              body: SafeArea(
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          Consumer<WebViewProvider>(
+                              builder: (context, object, widget) {
+                            return Consumer<HomePageProvider>(
+                                builder: (context, objectProgress, widget) {
+                              webViewProvider.changeUrl(
+                                  oldUrl: ApiMethods
+                                      .getSettingsData!.result[0].baseUrl);
+                              return InAppWebView(
+                                key: webViewKey,
+                                initialUrlRequest: URLRequest(
+                                    url: Uri.parse(
+                                        object.currentUrl.toString())),
+                                initialOptions: options,
+                                pullToRefreshController: ApiMethods
+                                            .getSettingsData!
+                                            .result[0]
+                                            .pullToRefresh
+                                            .toString() ==
+                                        "1"
+                                    ? pullToRefreshController
+                                    : null,
+                                onWebViewCreated: (controller) {
+                                  debugPrint("im in on Web View Created");
+                                  webViewController = controller;
+                                },
+                                androidOnGeolocationPermissionsShowPrompt:
+                                    (InAppWebViewController controller,
+                                        String origin) async {
+                                  return GeolocationPermissionShowPromptResponse(
+                                      origin: origin,
+                                      allow: true,
+                                      retain: true);
+                                },
+                                onLoadStart: (controller, url) {
+                                  checkUserConnection().then((value) {
+                                    return null;
+                                  });
+                                  setState(() {});
+                                },
+                                androidOnPermissionRequest:
+                                    (controller, origin, resources) async {
+                                  return PermissionRequestResponse(
+                                      resources: resources,
+                                      action: PermissionRequestResponseAction
+                                          .GRANT);
+                                },
+                                shouldOverrideUrlLoading:
+                                    (controller, navigationAction) async {
+                                  var uri = navigationAction.request.url!;
 
-                                if (![
-                                  "http",
-                                  "https",
-                                  "file",
-                                  "chrome",
-                                  "data",
-                                  "javascript",
-                                  "about"
-                                ].contains(uri.scheme)) {}
+                                  if (![
+                                    "http",
+                                    "https",
+                                    "file",
+                                    "chrome",
+                                    "data",
+                                    "javascript",
+                                    "about"
+                                  ].contains(uri.scheme)) {}
 
-                                return NavigationActionPolicy.ALLOW;
-                              },
-                              onLoadStop: (controller, url) async {
-                                pullToRefreshController.endRefreshing();
-                              },
-                              onLoadError: (controller, url, code, message) {
-                                pullToRefreshController.endRefreshing();
-                              },
-                              onUpdateVisitedHistory:
-                                  (controller, url, androidIsReload) {},
-                              onConsoleMessage: (controller, consoleMessage) {},
-                            );
-                          });
-                        }),
-                        activeConnection == false
-                            ? Container(
-                                height: double.infinity,
-                                color: white,
-                                width: double.infinity,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    SizedBox(
-                                      height: SizeConfig.blockVertical * 13,
-                                      child: Image.asset(
-                                          "assets/images/home_page_images/no-signal.png"),
-                                    ),
-                                    Text(
-                                      "Ooops!".tr(),
-                                      style: Fonts.ooops,
-                                    ),
-                                    Text(
-                                      "No Internet Connection Found".tr(),
-                                      style: Fonts.networkMessage,
-                                    ),
-                                    Text(
-                                      "Check Your Connection".tr(),
-                                      style: Fonts.networkMessage,
-                                    )
-                                  ],
-                                ),
-                              )
-                            : const SizedBox(),
-                        if (ApiMethods
-                                .getSettingsData!.result[0].bottomNavigation ==
-                            "")
-                          Positioned(
-                            child: Align(
-                              alignment: Alignment.bottomCenter,
-                              child: Container(
-                                width: MediaQuery.of(context).size.width,
-                                child: Platform.isAndroid
-                                    ? bannerAdView == true &&
-                                            StaticData.bannerAd == "1"
-                                        ? adContainer
-                                        : null
-                                    : bannerAdView == true &&
-                                            StaticData.iosBannerAd == "1"
-                                        ? adContainer
-                                        : null,
-                                color: Colors.transparent,
-                              ),
-                            ),
-                          ),
-                      ],
+                                  return NavigationActionPolicy.ALLOW;
+                                },
+                                onLoadStop: (controller, url) async {
+                                  pullToRefreshController.endRefreshing();
+                                },
+                                onLoadError: (controller, url, code, message) {
+                                  pullToRefreshController.endRefreshing();
+                                },
+                                onUpdateVisitedHistory:
+                                    (controller, url, androidIsReload) {},
+                                onConsoleMessage:
+                                    (controller, consoleMessage) {},
+                              );
+                            });
+                          }),
+                          activeConnection == false
+                              ? Container(
+                                  height: double.infinity,
+                                  color: white,
+                                  width: double.infinity,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        height: SizeConfig.blockVertical * 13,
+                                        child: Image.asset(
+                                            "assets/images/home_page_images/no-signal.png"),
+                                      ),
+                                      Text(
+                                        "Ooops!".tr(),
+                                        style: Fonts.ooops,
+                                      ),
+                                      Text(
+                                        "No Internet Connection Found".tr(),
+                                        style: Fonts.networkMessage,
+                                      ),
+                                      Text(
+                                        "Check Your Connection".tr(),
+                                        style: Fonts.networkMessage,
+                                      )
+                                    ],
+                                  ),
+                                )
+                              : const SizedBox(),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -820,7 +805,13 @@ class _HomePageState extends State<HomePage> {
       required WebViewProvider webViewProvider}) {
     return Builder(builder: (context) {
       return Container(
-        height: 140,
+        height: Platform.isAndroid
+            ? bannerAdView == true && StaticData.bannerAd == "1"
+                ? 120
+                : 70
+            : bannerAdView == true && StaticData.iosBannerAd == "1"
+                ? 120
+                : 70,
         color: Colors.transparent,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
@@ -845,7 +836,7 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SizedBox(
-                      height: 60,
+                      height: 70,
                       width: MediaQuery.of(context).size.width,
                       child: ListView.builder(
                         itemCount: 1,
