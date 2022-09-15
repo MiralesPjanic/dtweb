@@ -141,28 +141,29 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      margin:
-                          const EdgeInsets.only(left: 20, bottom: 10, top: 60),
-                      height: 80,
-                      width: 80,
-                      child: SharedPrefe.pic == null ||
-                              SharedPrefe.pic.toString().isEmpty ||
-                              ApiMethods.getSettingsData!.result[0].isLogin ==
-                                  "OFF"
-                          ? const CircleAvatar(
-                              radius: 45,
-                              backgroundColor: Colors.transparent,
-                              backgroundImage:
-                                  AssetImage('assets/images/ic_avatar.png'),
-                            )
-                          : CircleAvatar(
-                              radius: 45,
-                              backgroundColor: Colors.transparent,
-                              backgroundImage:
-                                  NetworkImage(SharedPrefe.pic.toString()),
-                            ),
-                    ),
+                    if (ApiMethods.getSettingsData!.result[0].isLogin != "OFF")
+                      Container(
+                        margin: const EdgeInsets.only(
+                            left: 20, bottom: 10, top: 60),
+                        height: 80,
+                        width: 80,
+                        child: SharedPrefe.pic == null ||
+                                SharedPrefe.pic.toString().isEmpty ||
+                                ApiMethods.getSettingsData!.result[0].isLogin ==
+                                    "OFF"
+                            ? const CircleAvatar(
+                                radius: 45,
+                                backgroundColor: Colors.transparent,
+                                backgroundImage:
+                                    AssetImage('assets/images/ic_avatar.png'),
+                              )
+                            : CircleAvatar(
+                                radius: 45,
+                                backgroundColor: Colors.transparent,
+                                backgroundImage:
+                                    NetworkImage(SharedPrefe.pic.toString()),
+                              ),
+                      ),
                     const SizedBox(
                       height: 4,
                     ),
@@ -173,7 +174,7 @@ class _HomePageState extends State<HomePage> {
                                   ApiMethods
                                           .getSettingsData!.result[0].isLogin ==
                                       "OFF"
-                              ? "Guest User"
+                              ? ""
                               : SharedPrefe.userName.toString(),
                           style: const TextStyle(
                               fontSize: 18,

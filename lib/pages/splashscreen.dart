@@ -185,17 +185,8 @@ class _SplashScreenState extends State<SplashScreen> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     SizedBox(
-                                      height: SizeConfig.heightMultiplier * 20,
-                                      width: SizeConfig.heightMultiplier * 20,
-                                      child: CircleAvatar(
-                                        backgroundColor: white,
-                                        child: CircleAvatar(
-                                          backgroundColor: Colors.transparent,
-                                          radius: 180,
-                                          backgroundImage: NetworkImage(
-                                            "${snapshot.data!.result![0].splashLogo}",
-                                          ),
-                                        ),
+                                      child: Image.network(
+                                        "${snapshot.data!.result![0].splashLogo}",
                                       ),
                                     ),
                                     const SizedBox(
