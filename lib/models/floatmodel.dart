@@ -1,12 +1,5 @@
-import 'dart:convert';
-
-GetFloatMenu getFloatMenuFromJson(String str) =>
-    GetFloatMenu.fromJson(json.decode(str));
-
-String getFloatMenuToJson(GetFloatMenu data) => json.encode(data.toJson());
-
-class GetFloatMenu {
-  GetFloatMenu({
+class FloatModel {
+  FloatModel({
     this.status,
     this.message,
     this.result,
@@ -16,7 +9,7 @@ class GetFloatMenu {
   String? message;
   List<Result>? result;
 
-  factory GetFloatMenu.fromJson(Map<String, dynamic> json) => GetFloatMenu(
+  factory FloatModel.fromJson(Map<String, dynamic> json) => FloatModel(
         status: json["status"],
         message: json["message"],
         result:
@@ -48,8 +41,8 @@ class Result {
   String? link;
   String? status;
   String? image;
-  DateTime? createdAt;
-  DateTime? updatedAt;
+  String? createdAt;
+  String? updatedAt;
 
   factory Result.fromJson(Map<String, dynamic> json) => Result(
         id: json["id"],
@@ -58,8 +51,8 @@ class Result {
         link: json["link"],
         status: json["status"],
         image: json["image"],
-        createdAt: DateTime.parse(json["created_at"]),
-        updatedAt: DateTime.parse(json["updated_at"]),
+        createdAt: json["created_at"],
+        updatedAt: json["updated_at"],
       );
 
   Map<String, dynamic> toJson() => {
@@ -69,7 +62,7 @@ class Result {
         "link": link,
         "status": status,
         "image": image,
-        "created_at": createdAt!.toIso8601String(),
-        "updated_at": updatedAt!.toIso8601String(),
+        "created_at": createdAt,
+        "updated_at": updatedAt,
       };
 }

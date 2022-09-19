@@ -10,39 +10,45 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
-import 'package:webview/api_services/api_methods.dart';
-import 'package:webview/pages/ads/banner_ad.dart';
-import 'package:webview/provider/homepageprovider.dart';
-import 'package:webview/provider/webviewprovider.dart';
+import 'package:webview/provider/apiprovider.dart';
 import 'package:webview/responsible_file/responsible_file.dart';
 import 'package:webview/theme_this_time_not_usable/fonts.dart';
 import 'package:webview/utils/colors.dart';
-import 'package:webview/utils/global_function.dart';
-import 'package:webview/utils/sharedprefe.dart';
+import 'package:webview/utils/constants.dart';
+import 'package:webview/utils/sharedpre.dart';
 import 'package:webview/pages/login_page.dart';
 import 'package:webview/pages/notification.dart';
 import 'package:webview/pages/notification_page.dart';
-import 'package:webview/static_data/static_data.dart';
-import 'package:webview/utils/state_management.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:webview_cookie_manager/webview_cookie_manager.dart';
-import '../models/get_setting_update_model.dart';
+
+import '../utils/adhelper.dart';
 
 class HomePage extends StatefulWidget {
-  final GetSettings? getSettingsdata;
-
-  const HomePage({Key? key, this.getSettingsdata}) : super(key: key);
+  const HomePage({Key? key}) : super(key: key);
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
   var currentClikedBottomMenu = 0;
-  String? getMenuA = StaticData.webViewUrl;
+  String? getMenuA = Constants.webViewUrl;
   String notificationTitle = 'No Title';
   String notificationBody = 'No Body';
   String notificationData = 'No Data';
   String androidId = "";
+  SharedPre sharePref = SharedPre();
+
+  var androidBannerAdsId = "";
+  var iosBannerAdsId = "";
+  var bannerad = "";
+  var banneradIos = "";
+  var interstitalad = "",
+      iosinterstitalad = "",
+      rewardad = "",
+      iosrewardad = "";
+
+  String? pic, username, email, type;
 
   final GlobalKey webViewKey = GlobalKey();
   InAppWebViewController? webViewController;
@@ -82,7 +88,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-    SharedPrefe.readUserProfileData();
     pullToRefreshController = PullToRefreshController(
       options: PullToRefreshOptions(
         color: colorPrimary,
@@ -100,22 +105,39 @@ class _HomePageState extends State<HomePage> {
     checkUserConnection();
     final firebaseMessaging = FCM();
     firebaseMessaging.setNotifications();
-    StaticData.webViewUrl = widget.getSettingsdata!.result[0].baseUrl;
     firebaseMessaging.streamCtlr.stream.listen(_changeData);
     firebaseMessaging.bodyCtlr.stream.listen(_changeBody);
     firebaseMessaging.titleCtlr.stream.listen(_changeTitle);
-
-    Platform.isAndroid
-        ? StaticData.bannerAd == "1"
-            ? bannerAd2.load()
-            : debugPrint("Banner Ad Android not loaded")
-        : StaticData.iosBannerAd == "1"
-            ? bannerAd2.load()
-            : debugPrint("Banner Ad IOS not loaded");
-
-    // checkAds();
-    debugPrint("====>" + SharedPrefe.pic.toString());
+    getAdmobId();
+    getUserinfo();
     super.initState();
+  }
+
+  getAdmobId() async {
+    androidBannerAdsId = await sharePref.read("banner_adid") ?? "";
+    iosBannerAdsId = await sharePref.read("ios_banner_adid") ?? "";
+
+    bannerad = await sharePref.read("banner_ad") ?? "";
+    banneradIos = await sharePref.read("ios_banner_ad") ?? "";
+
+    interstitalad = await sharePref.read("interstital_ad") ?? "";
+    iosinterstitalad = await sharePref.read("ios_interstital_ad") ?? "";
+
+    rewardad = await sharePref.read("reward_ad") ?? "";
+    iosrewardad = await sharePref.read("ios_reward_ad") ?? "";
+
+    debugPrint("Android id:====$androidBannerAdsId");
+    debugPrint("ios id:====$banneradIos");
+
+    AdHelper.createInterstitialAd();
+    AdHelper.createRewardedAd();
+  }
+
+  getUserinfo() async {
+    pic = await sharePref.read("pic") ?? "";
+    username = await sharePref.read("username") ?? "";
+    email = await sharePref.read("email") ?? "";
+    type = await sharePref.read("type") ?? "";
   }
 
   _changeData(String msg) => setState(() => notificationData = msg);
@@ -124,58 +146,53 @@ class _HomePageState extends State<HomePage> {
 
   bool bannerAdView = true;
 
-  Widget drawer(
-      {DrawerProvider? changeWebUrl,
-      var adContiner,
-      required WebViewProvider webViewProvider}) {
-    return Builder(builder: (context) {
-      return SingleChildScrollView(
+  Widget drawer() {
+    return SingleChildScrollView(
         child: SizedBox(
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+      height: MediaQuery.of(context).size.height,
+      child: Consumer<ApiProvider>(
+        builder: (context, provider, child) {
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (provider.getSettingModel.result?[0].isLogin == "On")
                 Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (ApiMethods.getSettingsData!.result[0].isLogin != "OFF")
-                      Container(
-                        margin: const EdgeInsets.only(
-                            left: 20, bottom: 10, top: 60),
-                        height: 80,
-                        width: 80,
-                        child: SharedPrefe.pic == null ||
-                                SharedPrefe.pic.toString().isEmpty ||
-                                ApiMethods.getSettingsData!.result[0].isLogin ==
-                                    "OFF"
-                            ? const CircleAvatar(
-                                radius: 45,
-                                backgroundColor: Colors.transparent,
-                                backgroundImage:
-                                    AssetImage('assets/images/ic_avatar.png'),
-                              )
-                            : CircleAvatar(
-                                radius: 45,
-                                backgroundColor: Colors.transparent,
-                                backgroundImage:
-                                    NetworkImage(SharedPrefe.pic.toString()),
-                              ),
-                      ),
+                    Container(
+                      margin:
+                          const EdgeInsets.only(left: 20, bottom: 10, top: 60),
+                      height: 80,
+                      width: 80,
+                      child: pic == null ||
+                              pic!.isEmpty ||
+                              provider.getSettingModel.result?[0].isLogin ==
+                                  "OFF"
+                          ? const CircleAvatar(
+                              radius: 45,
+                              backgroundColor: Colors.transparent,
+                              backgroundImage:
+                                  AssetImage('assets/images/ic_avatar.png'),
+                            )
+                          : CircleAvatar(
+                              radius: 45,
+                              backgroundColor: Colors.transparent,
+                              backgroundImage: NetworkImage(pic.toString()),
+                            ),
+                    ),
                     const SizedBox(
                       height: 4,
                     ),
                     Container(
                         margin: const EdgeInsets.only(left: 20, bottom: 3),
                         child: Text(
-                          SharedPrefe.userName == null ||
-                                  ApiMethods
-                                          .getSettingsData!.result[0].isLogin ==
+                          username == null ||
+                                  provider.getSettingModel.result?[0].isLogin ==
                                       "OFF"
                               ? ""
-                              : SharedPrefe.userName.toString(),
+                              : username.toString(),
                           style: const TextStyle(
                               fontSize: 18,
                               color: black,
@@ -184,13 +201,12 @@ class _HomePageState extends State<HomePage> {
                     Container(
                         margin: const EdgeInsets.only(left: 20, bottom: 5),
                         child: Text(
-                          SharedPrefe.email == null ||
-                                  ApiMethods
-                                          .getSettingsData!.result[0].isLogin ==
+                          email.toString() == null ||
+                                  provider.getSettingModel.result?[0].isLogin ==
                                       "OFF" ||
-                                  SharedPrefe.type == "1"
+                                  type.toString() == "1"
                               ? ""
-                              : SharedPrefe.email.toString(),
+                              : email.toString(),
                           style: const TextStyle(
                               fontSize: 16,
                               color: textColorThird,
@@ -198,94 +214,70 @@ class _HomePageState extends State<HomePage> {
                         )),
                   ],
                 ),
-                const SizedBox(height: 40),
-                ListView.builder(
-                  padding: const EdgeInsets.only(top: 0),
-                  shrinkWrap: true,
-                  itemCount: ApiMethods.getMenuListData!.result!.length,
-                  itemBuilder: (context, index) {
-                    return Consumer<WebViewProvider>(
-                        builder: (context, object, widget) {
-                      return Consumer<HomePageProvider>(
-                          builder: (context, objectBottomMenu, widget) {
-                        return Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            InkWell(
-                              onTap: () async {
-                                // checkAds();
-                                // checkUserConnection();
-                                // if (activeConnection == true) {
-                                //   changeWebUrl!.changeWebUrl(ApiMethods
-                                //       .getMenuListData!.result![index].url
-                                //       .toString());
-                                // }
-                                // setState(() {});
-                                // checkAds();
-                                if (objectBottomMenu.floatingValueCurrent ==
-                                    true) {
-                                  objectBottomMenu.floatingOnOff(
-                                      oldFloatingValue: false);
-                                }
-                                objectBottomMenu.changeBottomMenu(
-                                    oldIndex: index);
-                                checkUserConnection().then((value) async {
-                                  return {
-                                    webViewProvider.changeUrl(
-                                        oldUrl: ApiMethods.getMenuListData!
-                                            .result![index].url),
-                                    activeConnection
-                                        ? await webViewController!.loadUrl(
-                                            urlRequest: URLRequest(
-                                                url: Uri.parse(object.currentUrl
-                                                    .toString())),
-                                          )
-                                        : null,
-                                    // Future.delayed(const Duration(seconds: 5),
-                                    //     () {
-                                    //   debugPrint("after 5 sec");
-                                    // }),
-                                    setState(() {}),
-                                    _advancedDrawerController.hideDrawer()
-                                  };
-                                });
-                              },
-                              child: SizedBox(
-                                child: Center(
-                                  child: ListTile(
-                                    leading: Image.network(
-                                      ApiMethods
-                                          .getMenuListData!.result![index].image
-                                          .toString(),
-                                      height: SizeConfig.blockVertical * 3,
-                                    ),
-                                    title: Text(
-                                      ApiMethods
-                                          .getMenuListData!.result![index].title
-                                          .toString(),
-                                      style: TextStyle(
-                                        color: black,
-                                        fontSize:
-                                            SizeConfig.blockVertical * 2 - 1,
-                                      ),
-                                    ),
-                                  ),
+              const SizedBox(height: 40),
+              ListView.builder(
+                padding: const EdgeInsets.only(top: 0),
+                shrinkWrap: true,
+                itemCount: provider.menuModel.result?.length ?? 0,
+                itemBuilder: (context, index) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      InkWell(
+                        onTap: () async {
+                          if (provider.floatingValueCurrent == true) {
+                            provider.floatingOnOff(oldFloatingValue: false);
+                          }
+                          provider.changeBottomMenu(oldIndex: index);
+                          checkUserConnection().then((value) async {
+                            return {
+                              provider.changeUrl(
+                                  oldUrl:
+                                      provider.menuModel.result?[index].url),
+                              activeConnection
+                                  ? await webViewController!.loadUrl(
+                                      urlRequest: URLRequest(
+                                          url: Uri.parse(
+                                              provider.currentUrl.toString())),
+                                    )
+                                  : null,
+                              setState(() {}),
+                              _advancedDrawerController.hideDrawer()
+                            };
+                          });
+                        },
+                        child: SizedBox(
+                          child: Center(
+                            child: ListTile(
+                              leading: Image.network(
+                                provider.menuModel.result?[index].image
+                                        .toString() ??
+                                    "",
+                                height: SizeConfig.blockVertical * 3,
+                              ),
+                              title: Text(
+                                provider.menuModel.result?[index].title
+                                        .toString() ??
+                                    "",
+                                style: TextStyle(
+                                  color: black,
+                                  fontSize: SizeConfig.blockVertical * 2 - 1,
                                 ),
                               ),
                             ),
-                          ],
-                        );
-                      });
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    });
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    ));
   }
 
   final _advancedDrawerController = AdvancedDrawerController();
@@ -320,78 +312,64 @@ class _HomePageState extends State<HomePage> {
 
   String? selectedUrl;
 
-  Widget _getFloatingActionButton(
-      {DrawerProvider? changeWebUrl, WebViewProvider? object}) {
-    return Consumer<HomePageProvider>(
-        builder: (context, objectMenuProvider, widget) {
-      return SpeedDialMenuButton(
-        mainFABPosX: 20,
-        mainFABPosY: Platform.isAndroid
-            ? bannerAdView == true && StaticData.bannerAd == "1"
-                ? ApiMethods.getSettingsData!.result[0].bottomNavigation == ""
-                    ? 60
-                    : 120
-                : ApiMethods.getSettingsData!.result[0].bottomNavigation == ""
-                    ? 20
-                    : 80
-            : bannerAdView == true && StaticData.iosBannerAd == "1"
-                ? ApiMethods.getSettingsData!.result[0].bottomNavigation == ""
-                    ? 60
-                    : 100
-                : ApiMethods.getSettingsData!.result[0].bottomNavigation == ""
-                    ? 20
-                    : 60,
-        //if needed to close the menu after clicking sub-FAB
-        isShowSpeedDial: objectMenuProvider.floatingValueCurrent,
-        //manually open or close menu
-        updateSpeedDialStatus: (isShow) {
-          //return any open or close change within the widget
-          objectMenuProvider.floatingValueCurrent = isShow;
-        },
-        //general init
-        isMainFABMini: false,
-        isEnableAnimation: false,
-        mainMenuFloatingActionButton: MainMenuFloatingActionButton(
-            mini: false,
-            child: const Icon(Icons.menu),
-            onPressed: () {},
-            backgroundColor: colorPrimary,
-            closeMenuChild: const Icon(Icons.close),
-            closeMenuForegroundColor: white,
-            closeMenuBackgroundColor: colorPrimaryDark),
-        floatingActionButtonWidgetChildren: <FloatingActionButton>[
-          for (int i = 0; i < ApiMethods.getFloatData!.result!.length; i++) ...[
-            FloatingActionButton(
-              mini: true,
+  Widget _getFloatingActionButton() {
+    return Builder(builder: (context) {
+      return Consumer<ApiProvider>(
+          builder: (context, objectMenuProvider, widget) {
+        return SpeedDialMenuButton(
+          mainFABPosX: 20,
+          mainFABPosY: 120,
+          isShowSpeedDial: objectMenuProvider.floatingValueCurrent,
+          updateSpeedDialStatus: (isShow) {
+            objectMenuProvider.floatingValueCurrent = isShow;
+          },
+          //general init
+          isMainFABMini: false,
+          isEnableAnimation: false,
+          mainMenuFloatingActionButton: MainMenuFloatingActionButton(
+              mini: false,
+              child: const Icon(Icons.menu),
+              onPressed: () {},
               backgroundColor: colorPrimary,
-              child: SizedBox(
-                height: 20,
-                child: Image.network(
-                  ApiMethods.getFloatData!.result![i].image.toString(),
-                  color: colorAccent,
+              closeMenuChild: const Icon(Icons.close),
+              closeMenuForegroundColor: white,
+              closeMenuBackgroundColor: colorPrimaryDark),
+          floatingActionButtonWidgetChildren: <FloatingActionButton>[
+            for (int i = 0;
+                i < objectMenuProvider.floatModel.result!.length;
+                i++) ...[
+              FloatingActionButton(
+                mini: true,
+                backgroundColor: colorPrimary,
+                child: SizedBox(
+                  height: 20,
+                  child: Image.network(
+                    objectMenuProvider.floatModel.result![i].image.toString(),
+                    color: colorAccent,
+                  ),
                 ),
+                onPressed: () async {
+                  checkUserConnection().then((value) async {
+                    return {
+                      activeConnection
+                          ? await webViewController!.loadUrl(
+                              urlRequest: URLRequest(
+                                  url: Uri.parse(objectMenuProvider
+                                      .floatModel.result![i].link
+                                      .toString())),
+                            )
+                          : null,
+                    };
+                  });
+                  objectMenuProvider.floatingOnOff(oldFloatingValue: false);
+                },
               ),
-              onPressed: () async {
-                checkUserConnection().then((value) async {
-                  return {
-                    activeConnection
-                        ? await webViewController!.loadUrl(
-                            urlRequest: URLRequest(
-                                url: Uri.parse(ApiMethods
-                                    .getFloatData!.result![i].link
-                                    .toString())),
-                          )
-                        : null,
-                  };
-                });
-                objectMenuProvider.floatingOnOff(oldFloatingValue: false);
-              },
-            ),
-          ]
-        ],
-        isSpeedDialFABsMini: true,
-        paddingBtwSpeedDialButton: 10.0,
-      );
+            ]
+          ],
+          isSpeedDialFABsMini: true,
+          paddingBtwSpeedDialButton: 10.0,
+        );
+      });
     });
   }
 
@@ -399,15 +377,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    WebViewProvider webViewProvider = Provider.of(context, listen: false);
-    final AdWidget adWidget = AdWidget(ad: bannerAd2);
-    final Container adContainer = Container(
-      color: Colors.transparent,
-      alignment: Alignment.center,
-      child: adWidget,
-      width: bannerAd2.size.width.toDouble(),
-      height: bannerAd2.size.height.toDouble(),
-    );
+    var webViewProvider = Provider.of<ApiProvider>(context, listen: false);
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
     ));
@@ -415,22 +385,18 @@ class _HomePageState extends State<HomePage> {
       _advancedDrawerController.showDrawer();
     }
 
-    return ChangeNotifierProvider<DrawerProvider>(
-      create: (context) => DrawerProvider(),
-      child: Consumer<DrawerProvider>(builder: (context, value1, child) {
+    return Consumer<ApiProvider>(
+      builder: (context, provider, child) {
         return AdvancedDrawer(
           disabledGestures: true,
           childDecoration: const BoxDecoration(
             borderRadius: BorderRadius.all(Radius.circular(16)),
           ),
           drawer:
-              widget.getSettingsdata!.result[0].fullScreen == "Full screen" ||
-                      widget.getSettingsdata!.result[0].sideDrawer == ""
+              provider.getSettingModel.result?[0].fullScreen == "Full screen" ||
+                      provider.getSettingModel.result?[0].sideDrawer == ""
                   ? const Text("")
-                  : drawer(
-                      changeWebUrl: value1,
-                      adContiner: adContainer,
-                      webViewProvider: webViewProvider),
+                  : drawer(),
           controller: _advancedDrawerController,
           animationCurve: Curves.easeInOut,
           animationDuration: const Duration(milliseconds: 300),
@@ -445,19 +411,19 @@ class _HomePageState extends State<HomePage> {
               floatingActionButtonLocation:
                   FloatingActionButtonLocation.endDocked,
               floatingActionButton:
-                  ApiMethods.getSettingsData!.result[0].floatingMenuScreen ==
-                          "1"
-                      ? _getFloatingActionButton(changeWebUrl: value1)
+                  provider.getSettingModel.result?[0].floatingMenuScreen == "1"
+                      ? _getFloatingActionButton()
                       : null,
               backgroundColor: white,
-              appBar: widget.getSettingsdata!.result[0].fullScreen ==
+              appBar: provider.getSettingModel.result?[0].fullScreen ==
                       "Full screen"
                   ? null
                   : AppBar(
                       backgroundColor: colorPrimary,
-                      leading: widget.getSettingsdata!.result[0].fullScreen ==
+                      leading: provider.getSettingModel.result?[0].fullScreen ==
                                   "Full screen" ||
-                              widget.getSettingsdata!.result[0].sideDrawer == ""
+                              provider.getSettingModel.result?[0].sideDrawer ==
+                                  ""
                           ? null
                           : SizedBox(
                               child: IconButton(
@@ -477,6 +443,7 @@ class _HomePageState extends State<HomePage> {
                         const SizedBox(width: 10),
                         InkWell(
                           onTap: () {
+                            AdHelper.showRewardedAd();
                             Navigator.of(context).push(MaterialPageRoute(
                                 builder: (context) =>
                                     const NotificationPage()));
@@ -496,60 +463,53 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         const SizedBox(width: 20),
-                        SharedPrefe.userName ==
-                                SharedPrefe.userName //null value
-                            ? const Text("")
-                            : InkWell(
-                                onTap: () {
-                                  AwesomeDialog(
-                                      customHeader: Container(
-                                        margin: const EdgeInsets.all(15),
-                                        child: Image.network(
-                                          widget.getSettingsdata!.result[0]
+                        if (provider.getSettingModel.result?[0].isLogin == 'On')
+                          InkWell(
+                            onTap: () {
+                              AwesomeDialog(
+                                  customHeader: Container(
+                                    margin: const EdgeInsets.all(15),
+                                    child: Image.network(
+                                      provider.getSettingModel.result?[0]
                                               .appLogo
-                                              .toString(),
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                      btnOkText: "Yes",
-                                      btnCancelColor: red,
-                                      btnOkColor: green,
-                                      btnCancelText: "No",
-                                      context: context,
-                                      dialogType: DialogType.WARNING,
-                                      headerAnimationLoop: false,
-                                      animType: AnimType.TOPSLIDE,
-                                      showCloseIcon: true,
-                                      closeIcon: const Icon(
-                                          Icons.close_fullscreen_outlined),
-                                      title: 'Logout',
-                                      desc: 'are you sure logout',
-                                      btnCancelOnPress: () {},
-                                      onDissmissCallback: (type) {
-                                        debugPrint(
-                                            'Dialog Dissmiss from callback $type');
-                                      },
-                                      btnOkOnPress: () async {
-                                        await SharedPrefe.saveUserProfileData(
-                                            email: null,
-                                            userName: null,
-                                            type: null,
-                                            login: null);
-
-                                        Navigator.of(context).pushReplacement(
-                                            MaterialPageRoute(
-                                                builder: (context) => LoginPage(
-                                                    getSettingsData: widget
-                                                        .getSettingsdata)));
-                                      }).show();
-                                },
-                                child: SizedBox(
-                                  child: Image.asset(
-                                    "assets/images/home_page_images/logout.png",
-                                    width: 25,
+                                              .toString() ??
+                                          "",
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
-                                ),
+                                  btnOkText: "Yes",
+                                  btnCancelColor: red,
+                                  btnOkColor: green,
+                                  btnCancelText: "No",
+                                  context: context,
+                                  dialogType: DialogType.WARNING,
+                                  headerAnimationLoop: false,
+                                  animType: AnimType.TOPSLIDE,
+                                  showCloseIcon: true,
+                                  closeIcon: const Icon(
+                                      Icons.close_fullscreen_outlined),
+                                  title: 'Logout',
+                                  desc: 'are you sure logout',
+                                  btnCancelOnPress: () {},
+                                  onDissmissCallback: (type) {
+                                    debugPrint(
+                                        'Dialog Dissmiss from callback $type');
+                                  },
+                                  btnOkOnPress: () async {
+                                    await sharePref.clear();
+
+                                    Navigator.of(context).pushReplacement(
+                                        MaterialPageRoute(
+                                            builder: (context) => LoginPage()));
+                                  }).show();
+                            },
+                            child: SizedBox(
+                              child: Image.asset(
+                                "assets/images/home_page_images/logout.png",
+                                width: 25,
                               ),
+                            ),
+                          ),
                         const SizedBox(width: 20),
                         PopupMenuButton<int>(
                           icon: const Icon(Icons.settings),
@@ -592,7 +552,7 @@ class _HomePageState extends State<HomePage> {
                               },
                             ),
                             const PopupMenuDivider(),
-                            if (ApiMethods.getSettingsData!.result[0].isLogin ==
+                            if (provider.getSettingModel.result?[0].isLogin ==
                                 "On")
                               PopupMenuItem<int>(
                                   onTap: () {
@@ -604,9 +564,10 @@ class _HomePageState extends State<HomePage> {
                                           customHeader: Container(
                                             margin: const EdgeInsets.all(15),
                                             child: Image.network(
-                                              widget.getSettingsdata!.result[0]
-                                                  .appLogo
-                                                  .toString(),
+                                              provider.getSettingModel
+                                                      .result?[0].appLogo
+                                                      .toString() ??
+                                                  "",
                                               fit: BoxFit.cover,
                                             ),
                                           ),
@@ -629,18 +590,13 @@ class _HomePageState extends State<HomePage> {
                                                 'Dialog Dissmiss from callback $type');
                                           },
                                           btnOkOnPress: () async {
-                                            await SharedPrefe
-                                                .saveUserProfileData(
-                                                    email: null,
-                                                    userName: null,
-                                                    type: null,
-                                                    login: null);
+                                            await sharePref.clear();
 
-                                            Navigator.of(context).pushReplacement(
-                                                MaterialPageRoute(
-                                                    builder: (context) => LoginPage(
-                                                        getSettingsData: widget
-                                                            .getSettingsdata)));
+                                            Navigator.of(context)
+                                                .pushReplacement(
+                                                    MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            LoginPage()));
                                           }).show();
                                     });
                                   },
@@ -661,7 +617,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ],
                       title: Text(
-                        widget.getSettingsdata!.result[0].appName,
+                        provider.getSettingModel.result?[0].appName ?? "",
                         style: const TextStyle(
                             color: white,
                             fontSize: 24,
@@ -670,12 +626,9 @@ class _HomePageState extends State<HomePage> {
                     ),
               extendBody: true,
               bottomNavigationBar:
-                  widget.getSettingsdata!.result[0].bottomNavigation ==
+                  provider.getSettingModel.result?[0].bottomNavigation ==
                           "Bottom Navigation"
-                      ? bottomBar(
-                          changeWebUrl: value1,
-                          adContiner: adContainer,
-                          webViewProvider: webViewProvider)
+                      ? bottomBar()
                       : null,
               body: SafeArea(
                 child: Column(
@@ -683,81 +636,68 @@ class _HomePageState extends State<HomePage> {
                     Expanded(
                       child: Stack(
                         children: [
-                          Consumer<WebViewProvider>(
-                              builder: (context, object, widget) {
-                            return Consumer<HomePageProvider>(
-                                builder: (context, objectProgress, widget) {
-                              webViewProvider.changeUrl(
-                                  oldUrl: ApiMethods
-                                      .getSettingsData!.result[0].baseUrl);
-                              return InAppWebView(
-                                key: webViewKey,
-                                initialUrlRequest: URLRequest(
-                                    url: Uri.parse(
-                                        object.currentUrl.toString())),
-                                initialOptions: options,
-                                pullToRefreshController: ApiMethods
-                                            .getSettingsData!
-                                            .result[0]
-                                            .pullToRefresh
-                                            .toString() ==
-                                        "1"
-                                    ? pullToRefreshController
-                                    : null,
-                                onWebViewCreated: (controller) {
-                                  debugPrint("im in on Web View Created");
-                                  webViewController = controller;
-                                },
-                                androidOnGeolocationPermissionsShowPrompt:
-                                    (InAppWebViewController controller,
-                                        String origin) async {
-                                  return GeolocationPermissionShowPromptResponse(
-                                      origin: origin,
-                                      allow: true,
-                                      retain: true);
-                                },
-                                onLoadStart: (controller, url) {
-                                  checkUserConnection().then((value) {
-                                    return null;
-                                  });
-                                  setState(() {});
-                                },
-                                androidOnPermissionRequest:
-                                    (controller, origin, resources) async {
-                                  return PermissionRequestResponse(
-                                      resources: resources,
-                                      action: PermissionRequestResponseAction
-                                          .GRANT);
-                                },
-                                shouldOverrideUrlLoading:
-                                    (controller, navigationAction) async {
-                                  var uri = navigationAction.request.url!;
+                          InAppWebView(
+                            key: webViewKey,
+                            initialUrlRequest: URLRequest(
+                                url: Uri.parse((provider
+                                        .getSettingModel.result?[0].baseUrl ??
+                                    ""))),
+                            initialOptions: options,
+                            pullToRefreshController: provider.getSettingModel
+                                        .result?[0].pullToRefresh
+                                        .toString() ==
+                                    "1"
+                                ? pullToRefreshController
+                                : null,
+                            onWebViewCreated: (controller) {
+                              debugPrint("im in on Web View Created");
+                              webViewController = controller;
+                            },
+                            androidOnGeolocationPermissionsShowPrompt:
+                                (InAppWebViewController controller,
+                                    String origin) async {
+                              return GeolocationPermissionShowPromptResponse(
+                                  origin: origin, allow: true, retain: true);
+                            },
+                            onLoadStart: (controller, url) {
+                              checkUserConnection().then((value) {
+                                return null;
+                              });
+                              setState(() {});
+                            },
+                            androidOnPermissionRequest:
+                                (controller, origin, resources) async {
+                              return PermissionRequestResponse(
+                                  resources: resources,
+                                  action:
+                                      PermissionRequestResponseAction.GRANT);
+                            },
+                            shouldOverrideUrlLoading:
+                                (controller, navigationAction) async {
+                              var uri = navigationAction.request.url!;
 
-                                  if (![
-                                    "http",
-                                    "https",
-                                    "file",
-                                    "chrome",
-                                    "data",
-                                    "javascript",
-                                    "about"
-                                  ].contains(uri.scheme)) {}
+                              if (![
+                                "http",
+                                "https",
+                                "file",
+                                "chrome",
+                                "data",
+                                "javascript",
+                                "about"
+                              ].contains(uri.scheme)) {}
 
-                                  return NavigationActionPolicy.ALLOW;
-                                },
-                                onLoadStop: (controller, url) async {
-                                  pullToRefreshController.endRefreshing();
-                                },
-                                onLoadError: (controller, url, code, message) {
-                                  pullToRefreshController.endRefreshing();
-                                },
-                                onUpdateVisitedHistory:
-                                    (controller, url, androidIsReload) {},
-                                onConsoleMessage:
-                                    (controller, consoleMessage) {},
-                              );
-                            });
-                          }),
+                              return NavigationActionPolicy.ALLOW;
+                            },
+                            onLoadStop: (controller, url) async {
+                              pullToRefreshController.endRefreshing();
+                            },
+                            onLoadError: (controller, url, code, message) {
+                              pullToRefreshController.endRefreshing();
+                            },
+                            onUpdateVisitedHistory:
+                                (controller, url, androidIsReload) {},
+                            onConsoleMessage: (controller, consoleMessage) {},
+                          ),
                           activeConnection == false
                               ? Container(
                                   height: double.infinity,
@@ -796,42 +736,28 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         );
-      }),
+      },
     );
   }
 
-  bottomBar(
-      {DrawerProvider? changeWebUrl,
-      var adContiner,
-      required WebViewProvider webViewProvider}) {
+  bottomBar() {
     return Builder(builder: (context) {
       return Container(
-        height: Platform.isAndroid
-            ? bannerAdView == true && StaticData.bannerAd == "1"
-                ? 120
-                : 70
-            : bannerAdView == true && StaticData.iosBannerAd == "1"
-                ? 120
-                : 70,
         color: Colors.transparent,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Container(
-              width: double.infinity,
-              child: Platform.isAndroid
-                  ? bannerAdView == true && StaticData.bannerAd == "1"
-                      ? adContiner
-                      : null
-                  : bannerAdView == true && StaticData.iosBannerAd == "1"
-                      ? adContiner
-                      : null,
-              color: Colors.transparent,
-            ),
+            if (bannerad == "1" || banneradIos == "1")
+              SizedBox(
+                height: 60,
+                child: AdWidget(
+                    ad: AdHelper.createBannerAd()..load(), key: UniqueKey()),
+              ),
             Container(
               color: colorPrimary,
               child: Builder(builder: (context) {
-                debugPrint(StaticData.selectedIndex.toString() +
+                debugPrint(Constants.selectedIndex.toString() +
                     "Selected Index in buildr");
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -843,68 +769,59 @@ class _HomePageState extends State<HomePage> {
                         itemCount: 1,
                         itemBuilder: (context, index) {
                           debugPrint("1");
-                          return Consumer<WebViewProvider>(
-                              builder: (context, object, widget) {
-                            return Consumer<HomePageProvider>(
-                                builder: (context, objectBottomMenu, widget) {
-                              return SalomonBottomBar(
-                                currentIndex: objectBottomMenu
-                                    .currentIndex, //_selectedIndex,
-                                selectedItemColor: colorAccent,
-                                unselectedItemColor: colorAccent,
-                                onTap: (i) async {
-                                  // checkAds();
-                                  if (objectBottomMenu.floatingValueCurrent ==
-                                      true) {
-                                    objectBottomMenu.floatingOnOff(
-                                        oldFloatingValue: false);
-                                  }
-                                  objectBottomMenu.changeBottomMenu(
-                                      oldIndex: i);
-                                  checkUserConnection().then((value) async {
-                                    return {
-                                      webViewProvider.changeUrl(
-                                          oldUrl: ApiMethods
-                                              .getMenuListData!.result![i].url),
-                                      activeConnection
-                                          ? await webViewController!.loadUrl(
-                                              urlRequest: URLRequest(
-                                                  url: Uri.parse(object
-                                                      .currentUrl
-                                                      .toString())),
-                                            )
-                                          : null,
-                                      // Future.delayed(const Duration(seconds: 5),
-                                      //     () {
-                                      //   debugPrint("after 5 sec");
-                                      // }),
-                                      setState(() {}),
-                                    };
-                                  });
-                                },
-                                items: [
-                                  for (int i = 0;
-                                      i <
-                                          ApiMethods
-                                              .getMenuListData!.result!.length;
-                                      i++)
-                                    SalomonBottomBarItem(
-                                        icon: Image.network(
-                                          ApiMethods
-                                              .getMenuListData!.result![i].image
-                                              .toString(),
-                                          height: 22,
-                                          color: colorAccent,
-                                        ),
-                                        title: Text(
-                                            ApiMethods.getMenuListData!
-                                                .result![i].title
-                                                .toString(),
-                                            style:
-                                                TextStyle(color: colorAccent)))
-                                ],
-                              );
-                            });
+                          return Consumer<ApiProvider>(
+                              builder: (context, bottomMenu, widget) {
+                            return SalomonBottomBar(
+                              currentIndex:
+                                  bottomMenu.currentIndex, //_selectedIndex,
+                              selectedItemColor: colorAccent,
+                              unselectedItemColor: colorAccent,
+                              onTap: (i) async {
+                                if (interstitalad == "1" ||
+                                    iosinterstitalad == "1") {
+                                  AdHelper.showInterstitialAd();
+                                }
+
+                                if (bottomMenu.floatingValueCurrent == true) {
+                                  bottomMenu.floatingOnOff(
+                                      oldFloatingValue: false);
+                                }
+                                bottomMenu.changeBottomMenu(oldIndex: i);
+                                checkUserConnection().then((value) async {
+                                  return {
+                                    bottomMenu.changeUrl(
+                                        oldUrl: bottomMenu
+                                            .menuModel.result![i].url),
+                                    activeConnection
+                                        ? await webViewController!.loadUrl(
+                                            urlRequest: URLRequest(
+                                                url: Uri.parse(bottomMenu
+                                                    .currentUrl
+                                                    .toString())),
+                                          )
+                                        : null,
+                                    setState(() {}),
+                                  };
+                                });
+                              },
+                              items: [
+                                for (int i = 0;
+                                    i < bottomMenu.menuModel.result!.length;
+                                    i++)
+                                  SalomonBottomBarItem(
+                                      icon: Image.network(
+                                        bottomMenu.menuModel.result![i].image
+                                            .toString(),
+                                        height: 22,
+                                        color: colorAccent,
+                                      ),
+                                      title: Text(
+                                          bottomMenu.menuModel.result?[i].title
+                                                  .toString() ??
+                                              "",
+                                          style: TextStyle(color: colorAccent)))
+                              ],
+                            );
                           });
                         },
                       ),

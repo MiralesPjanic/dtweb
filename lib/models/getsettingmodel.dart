@@ -1,26 +1,16 @@
-// To parse this JSON data, do
-//
-//     final getSettings = getSettingsFromJson(jsonString);
-
-import 'dart:convert';
-
-GetSettings getSettingsFromJson(String str) =>
-    GetSettings.fromJson(json.decode(str));
-
-String getSettingsToJson(GetSettings data) => json.encode(data.toJson());
-
-class GetSettings {
-  GetSettings({
-    required this.status,
-    required this.message,
-    required this.result,
+class GetSettingModel {
+  GetSettingModel({
+    this.status,
+    this.message,
+    this.result,
   });
 
-  int status;
-  String message;
-  List<Result> result;
+  int? status;
+  String? message;
+  List<Result>? result;
 
-  factory GetSettings.fromJson(Map<String, dynamic> json) => GetSettings(
+  factory GetSettingModel.fromJson(Map<String, dynamic> json) =>
+      GetSettingModel(
         status: json["status"],
         message: json["message"],
         result:
@@ -30,54 +20,54 @@ class GetSettings {
   Map<String, dynamic> toJson() => {
         "status": status,
         "message": message,
-        "result": List<dynamic>.from(result.map((x) => x.toJson())),
+        "result": List<dynamic>.from(result!.map((x) => x.toJson())),
       };
 }
 
 class Result {
   Result({
-    required this.id,
-    required this.appId,
-    required this.appName,
-    required this.appLogo,
-    required this.fullScreen,
-    required this.sideDrawer,
-    required this.bottomNavigation,
-    required this.baseUrl,
-    required this.primary,
-    required this.primaryDark,
-    required this.accent,
-    required this.pullToRefresh,
-    required this.introductionScreen,
-    required this.floatingMenuScreen,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.isLogin,
-    required this.loginWithMobile,
-    required this.loginWithGmail,
-    required this.loginWithFacebook,
+    this.id,
+    this.appId,
+    this.appName,
+    this.appLogo,
+    this.fullScreen,
+    this.sideDrawer,
+    this.bottomNavigation,
+    this.baseUrl,
+    this.primary,
+    this.primaryDark,
+    this.accent,
+    this.pullToRefresh,
+    this.introductionScreen,
+    this.floatingMenuScreen,
+    this.createdAt,
+    this.updatedAt,
+    this.isLogin,
+    this.loginWithMobile,
+    this.loginWithGmail,
+    this.loginWithFacebook,
   });
 
-  int id;
-  String appId;
-  String appName;
-  String appLogo;
-  String fullScreen;
-  String sideDrawer;
-  String bottomNavigation;
-  String baseUrl;
-  String primary;
-  String primaryDark;
-  String accent;
-  String pullToRefresh;
-  String introductionScreen;
-  String floatingMenuScreen;
-  String createdAt;
-  String updatedAt;
-  String isLogin;
-  String loginWithMobile;
-  String loginWithGmail;
-  String loginWithFacebook;
+  int? id;
+  String? appId;
+  String? appName;
+  String? appLogo;
+  String? fullScreen;
+  String? sideDrawer;
+  String? bottomNavigation;
+  String? baseUrl;
+  String? primary;
+  String? primaryDark;
+  String? accent;
+  String? pullToRefresh;
+  String? introductionScreen;
+  String? floatingMenuScreen;
+  String? createdAt;
+  String? updatedAt;
+  String? isLogin;
+  String? loginWithMobile;
+  String? loginWithGmail;
+  String? loginWithFacebook;
 
   factory Result.fromJson(Map<String, dynamic> json) => Result(
         id: json["id"],

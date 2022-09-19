@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview/api_services/api_methods.dart';
-import 'package:webview/models/get_notification_list_model.dart';
+import 'package:webview/provider/apiprovider.dart';
 import 'package:webview/utils/colors.dart';
 
 class NotificationPage extends StatefulWidget {
@@ -15,23 +15,35 @@ class _NotificationPageState extends State<NotificationPage> {
   DateTime dateTime = DateTime.now();
 
   @override
+  void initState() {
+    super.initState();
+    var apiprovide = Provider.of<ApiProvider>(context, listen: false);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    var apiprovide = Provider.of<ApiProvider>(context);
+    apiprovide.getNotificationList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Notifications"),
         backgroundColor: colorPrimary,
       ),
-      body: FutureBuilder<GetNotificationListModel?>(
-        future: ApiMethods.getNotificationList(),
-        builder: (context, AsyncSnapshot<GetNotificationListModel?> snapshot) {
-          if (snapshot.hasData) {
+      body: Consumer<ApiProvider>(
+        builder: (context, snapshot, child) {
+          if (snapshot.loading) {
+            return CircularProgressIndicator();
+          } else {
             return ListView.builder(
-                itemCount: snapshot.data!.result!.length,
+                itemCount: snapshot.notificationModel.result?.length ?? 0,
                 itemBuilder: (context, index) {
                   return InkWell(
                     onTap: () {
-                      _launchUrl(Uri.parse(
-                          snapshot.data!.result![index].url.toString()));
+                      _launchUrl(Uri.parse(snapshot
+                              .notificationModel.result?[index].url
+                              .toString() ??
+                          ""));
                     },
                     child: Card(
                       elevation: 5,
@@ -43,10 +55,14 @@ class _NotificationPageState extends State<NotificationPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            snapshot.data!.result![index].image!.isNotEmpty
+                            (snapshot.notificationModel.result?[index].image ??
+                                        "")
+                                    .isNotEmpty
                                 ? Image.network(
-                                    snapshot.data!.result![index].image
-                                        .toString(),
+                                    snapshot.notificationModel.result?[index]
+                                            .image
+                                            .toString() ??
+                                        "",
                                     fit: BoxFit.fill,
                                     height: 200,
                                     width: MediaQuery.of(context).size.width,
@@ -55,7 +71,9 @@ class _NotificationPageState extends State<NotificationPage> {
                             Padding(
                               padding: EdgeInsets.all(5),
                               child: Text(
-                                snapshot.data!.result![index].title.toString(),
+                                snapshot.notificationModel.result?[index].title
+                                        .toString() ??
+                                    "",
                                 style: TextStyle(
                                     color: black,
                                     overflow: TextOverflow.ellipsis,
@@ -66,7 +84,9 @@ class _NotificationPageState extends State<NotificationPage> {
                             Padding(
                               padding: EdgeInsets.all(5),
                               child: Text(
-                                snapshot.data!.result![index].title.toString(),
+                                snapshot.notificationModel.result?[index].title
+                                        .toString() ??
+                                    "",
                                 style: TextStyle(
                                     color: gray,
                                     fontWeight: FontWeight.normal,
@@ -80,8 +100,10 @@ class _NotificationPageState extends State<NotificationPage> {
                                   padding: EdgeInsets.only(
                                       top: 5, bottom: 5, right: 10),
                                   child: Text(
-                                    snapshot.data!.result![index].createdAt
-                                        .toString()
+                                    (snapshot.notificationModel.result?[index]
+                                                .createdAt
+                                                .toString() ??
+                                            "")
                                         .split('T')
                                         .first,
                                     style: TextStyle(
@@ -98,8 +120,6 @@ class _NotificationPageState extends State<NotificationPage> {
                     ),
                   );
                 });
-          } else {
-            return const Center(child: CircularProgressIndicator());
           }
         },
       ),

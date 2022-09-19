@@ -6,20 +6,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
-import 'package:webview/api_services/api_methods.dart';
-import 'package:webview/pages/ads/banner_ad.dart';
+import 'package:provider/provider.dart';
 import 'package:webview/pages/error_pages/facebook_auth_error.dart';
-import 'package:webview/static_data/static_data.dart';
 import 'package:webview/utils/colors.dart';
-import 'package:webview/utils/constants.dart';
-import 'package:webview/utils/sharedprefe.dart';
+import 'package:webview/utils/sharedpre.dart';
 import 'package:webview/pages/home_page.dart';
 import 'package:webview/theme_this_time_not_usable/fonts.dart';
-import '../models/get_setting_update_model.dart';
+import 'package:webview/utils/utility.dart';
+import '../provider/apiprovider.dart';
 import '../responsible_file/responsible_file.dart';
 import '../widgets/google_and_facebook_button.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -29,9 +26,7 @@ import '../utils/html_shim.dart' if (dart.library.html) 'dart:html' show window;
 enum LoginScreen { enterMobileNumber, enterOTPNumber }
 
 class LoginPage extends StatefulWidget {
-  final GetSettings? getSettingsData;
-
-  const LoginPage({Key? key, required this.getSettingsData}) : super(key: key);
+  const LoginPage({Key? key}) : super(key: key);
 
   @override
   _LoginPageState createState() => _LoginPageState();
@@ -64,20 +59,19 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    Platform.isAndroid
-        ? StaticData.bannerAd == "1"
-            ? bannerAd3.load()
-            : debugPrint("Banner Ad Android not loaded")
-        : StaticData.iosBannerAd == "1"
-            ? bannerAd3.load()
-            : debugPrint("Banner Ad IOS not loaded");
-
-    SharedPrefe.readUserProfileData();
   }
 
-// Dispose Method
-
-// Login Methods
+// This class build Method-
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      backgroundColor: white,
+      body: currentState == LoginScreen.enterMobileNumber
+          ? showMobile(context)
+          : showOtp(context),
+    );
+  }
 
 // Facebook SignIn Method
 
@@ -111,24 +105,8 @@ class _LoginPageState extends State<LoginPage> {
       final authCred = await auth.signInWithCredential(phoneAuthCredential);
 
       if (authCred.user != null) {
-        await ApiMethods.login(
-            email: mobileNumberController.text.toString(),
-            username: mobileNumberController.text.toString(),
-            type: "1");
-
-        await SharedPrefe.saveUserProfileData(
-            email: mobileNumberController.text.toString(),
-            userName: mobileNumberController.text.toString(),
-            pic: '',
-            type: "1",
-            login: "Off");
-
-        Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (context) => HomePage(
-                      getSettingsdata: widget.getSettingsData,
-                    )));
+        // Login Api
+        login(authCred.user?.phoneNumber, authCred.user?.phoneNumber, 1);
       }
     } on FirebaseAuthException {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -136,7 +114,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-// Google Signin Method-------------------------------------------------------------------------------------------------------------------
+// Google Signin Method-----------
 
   Future<void> signupGoogle(BuildContext context) async {
     final GoogleSignIn googleSignIn = GoogleSignIn();
@@ -155,375 +133,350 @@ class _LoginPageState extends State<LoginPage> {
 
       User? user = result.user;
 
-      await ApiMethods.login(
-          email: user!.providerData[0].email.toString(),
-          username: user.displayName.toString(),
-          type: "3");
-
-      debugPrint(user.photoURL.toString());
-
-      await SharedPrefe.saveUserProfileData(
-          email: user.providerData[0].email.toString(),
-          userName: user.displayName.toString(),
-          pic: user.photoURL.toString(),
-          type: "3",
-          login: "Off");
-
-      Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) => HomePage(
-                    getSettingsdata: widget.getSettingsData,
-                  )));
-// if result not null we simply call the MaterialpageRoute,
-      // for go to the HomePage screen
-
+      login(user!.providerData[0].email, user.displayName, 3);
     }
   }
 
-  // UI Methods-
+  login(var email, var username, var type) async {
+    var apiprovide = Provider.of<ApiProvider>(context, listen: false);
+    await apiprovide.login(email, username, type);
 
-// This class build Method-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      backgroundColor: white,
-      body: currentState == LoginScreen.enterMobileNumber
-          ? showMobile(context)
-          : showOtp(context),
-    );
+    if (apiprovide.loading) {
+      if (apiprovide.loginmodel.status.toString() == "200") {
+        await SharedPre()
+            .save("email", apiprovide.loginmodel.result?[0].email ?? "");
+        await SharedPre()
+            .save("userName", apiprovide.loginmodel.result?[0].username ?? "");
+        await SharedPre().save("pic", '');
+        await SharedPre()
+            .save("type", apiprovide.loginmodel.result?[0].type ?? "");
+        await SharedPre().save("login", 'off');
+
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => HomePage()));
+      } else {
+        Utility.toastMessage(apiprovide.loginmodel.message.toString());
+      }
+    }
   }
+  // UI Methods-
 
 // Login Screen UI----
   showMobile(context) {
-    final AdWidget adWidget = AdWidget(ad: bannerAd3);
-    final Container adContainer = Container(
-      color: Colors.transparent,
-      alignment: Alignment.center,
-      child: adWidget,
-      width: bannerAd3.size.width.toDouble(),
-      height: bannerAd3.size.height.toDouble(),
-    );
     return SingleChildScrollView(
-      child: Container(
-        height: SizeConfig.screenHeight,
-        margin: EdgeInsets.only(
-            top: SizeConfig.blockVertical * 8,
-            left: SizeConfig.blockVertical * 4,
-            right: SizeConfig.blockVertical * 4),
-        child: Column(
-          children: [
-            SizedBox(
-              width: double.infinity,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    margin:
-                        EdgeInsets.only(bottom: SizeConfig.blockVertical * 3),
-                    child: Image.network(
-                      widget.getSettingsData!.result[0].appLogo.toString(),
-                      fit: BoxFit.cover,
-                      height: 100,
-                    ),
-                  ),
-                  Container(
-                    child: Text(
-                      'Welcome back,'.tr(),
-                      style: Fonts.welcomeBack,
-                    ).tr(),
-                    margin: EdgeInsets.only(
-                        top: SizeConfig.blockVertical,
-                        bottom: SizeConfig.blockHorizontal),
-                  ),
-                  widget.getSettingsData!.result[0].loginWithMobile == "On"
-                      ? Container(
-                          margin: EdgeInsets.only(
-                            bottom: SizeConfig.blockVertical * 4,
-                          ),
-                          child: Text(
-                            "Enter your mobile number".tr(),
-                            style: Fonts.enterYourMobileNumberToLogin,
-                          ),
-                        )
-                      : Container(
-                          margin: EdgeInsets.only(
-                            bottom: SizeConfig.blockVertical * 4,
-                          ),
-                          child: Text(
-                            "Please Login".tr(),
-                            style: Fonts.enterYourMobileNumberToLogin,
-                          ),
+      child: Consumer<ApiProvider>(
+        builder: (context, logindata, child) {
+          return Container(
+            height: SizeConfig.screenHeight,
+            margin: EdgeInsets.only(
+                top: SizeConfig.blockVertical * 8,
+                left: SizeConfig.blockVertical * 4,
+                right: SizeConfig.blockVertical * 4),
+            child: Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        margin: EdgeInsets.only(
+                            bottom: SizeConfig.blockVertical * 3),
+                        child: Image.network(
+                          logindata.getSettingModel.result?[0].appLogo
+                                  .toString() ??
+                              "",
+                          fit: BoxFit.cover,
+                          height: 100,
                         ),
-                ],
-              ),
-            ),
-            Form(
-              key: _formKey,
-              child: Container(
-                padding: EdgeInsets.zero,
-                margin: EdgeInsets.zero,
-                width: double.infinity,
-                child: Column(
-                  children: [
-                    widget.getSettingsData!.result[0].loginWithMobile == "On"
-                        ? IntlPhoneField(
-                            disableLengthCheck: true,
-                            autovalidateMode: AutovalidateMode.disabled,
-                            controller: mobileNumberController,
-                            style: TextStyle(
-                                fontSize: SizeConfig.textMultiplier * 2 - 2),
-                            showCountryFlag: false,
-                            showDropdownIcon: false,
-                            decoration: InputDecoration(
-                              hintText: "Enter your mobile number".tr(),
-                              hintStyle: Fonts.enterYourMobileNumber,
-                              border: const OutlineInputBorder(
-                                borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(8),
-                                    topRight: Radius.circular(8),
-                                    bottomLeft: Radius.circular(8),
-                                    bottomRight: Radius.circular(8)),
+                      ),
+                      Container(
+                        child: Text(
+                          'Welcome back,'.tr(),
+                          style: Fonts.welcomeBack,
+                        ).tr(),
+                        margin: EdgeInsets.only(
+                            top: SizeConfig.blockVertical,
+                            bottom: SizeConfig.blockHorizontal),
+                      ),
+                      logindata.getSettingModel.result?[0].loginWithMobile ==
+                              "On"
+                          ? Container(
+                              margin: EdgeInsets.only(
+                                bottom: SizeConfig.blockVertical * 4,
+                              ),
+                              child: Text(
+                                "Enter your mobile number".tr(),
+                                style: Fonts.enterYourMobileNumberToLogin,
+                              ),
+                            )
+                          : Container(
+                              margin: EdgeInsets.only(
+                                bottom: SizeConfig.blockVertical * 4,
+                              ),
+                              child: Text(
+                                "Please Login".tr(),
+                                style: Fonts.enterYourMobileNumberToLogin,
                               ),
                             ),
-                            initialCountryCode: 'IN',
-                            onChanged: (phone) {
-                              phoneNumberCountryCode = phone.countryCode;
-                            },
-                          )
-                        : const SizedBox(
-                            height: 0,
-                          ),
-                    SizedBox(
-                      height: SizeConfig.blockVertical * 4,
-                    ),
-                    widget.getSettingsData!.result[0].loginWithMobile == "On"
-                        ? InkWell(
-                            onTap: () async {
-                              await auth.verifyPhoneNumber(
-                                phoneNumber:
-                                    "$phoneNumberCountryCode ${mobileNumberController.text}",
-                                verificationCompleted:
-                                    (phoneAuthCredential) async {},
-                                verificationFailed: (verificationFailed) {},
-                                codeSent:
-                                    (verificationIdReal, resendingToken) async {
-                                  setState(() {
-                                    verificationId = verificationIdReal;
-                                    currentState = LoginScreen.enterOTPNumber;
-
-                                    startOTPExpireTime();
-                                    wait = false;
-                                    setState(() {
-                                      start = 59;
-                                      wait = true;
-                                    });
-                                  });
-                                },
-                                codeAutoRetrievalTimeout:
-                                    (String verificationID) {},
-                              );
-                            },
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: SizeConfig.blockVertical * 6 + 3,
-                              child: Ink(
-                                decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [colorPrimary, colorPrimaryDark],
-                                      begin: Alignment.centerLeft,
-                                      end: Alignment.centerRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(30.0)),
-                                child: Container(
-                                  width: double.infinity,
-                                  alignment: Alignment.center,
-                                  child: Text("Login".tr(),
-                                      textAlign: TextAlign.center,
-                                      style: Fonts.login),
-                                ),
-                              ),
-                            ),
-                          )
-                        : const SizedBox(
-                            height: 0,
-                          ),
-                    SizedBox(
-                      height: SizeConfig.blockVertical * 3,
-                    ),
-                    widget.getSettingsData!.result[0].loginWithMobile == "On" &&
-                            widget.getSettingsData!.result[0].loginWithGmail ==
+                    ],
+                  ),
+                ),
+                Form(
+                  key: _formKey,
+                  child: Container(
+                    padding: EdgeInsets.zero,
+                    margin: EdgeInsets.zero,
+                    width: double.infinity,
+                    child: Column(
+                      children: [
+                        logindata.getSettingModel.result?[0].loginWithMobile ==
                                 "On"
-                        ? SizedBox(
-                            width: double.infinity,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  height: SizeConfig.blockHorizontal / 2,
-                                  color: nobel,
-                                  width: 90,
-                                ),
-                                Container(
-                                  margin:
-                                      const EdgeInsets.only(left: 6, right: 6),
-                                  child: Text(
-                                    "or".tr(),
-                                    style: Fonts.or,
+                            ? IntlPhoneField(
+                                disableLengthCheck: true,
+                                autovalidateMode: AutovalidateMode.disabled,
+                                controller: mobileNumberController,
+                                style: TextStyle(
+                                    fontSize:
+                                        SizeConfig.textMultiplier * 2 - 2),
+                                showCountryFlag: false,
+                                showDropdownIcon: false,
+                                decoration: InputDecoration(
+                                  hintText: "Enter your mobile number".tr(),
+                                  hintStyle: Fonts.enterYourMobileNumber,
+                                  border: const OutlineInputBorder(
+                                    borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(8),
+                                        topRight: Radius.circular(8),
+                                        bottomLeft: Radius.circular(8),
+                                        bottomRight: Radius.circular(8)),
                                   ),
                                 ),
-                                Container(
-                                  height: SizeConfig.blockHorizontal / 2,
-                                  color: nobel,
-                                  width: 90,
-                                )
-                              ],
-                            ),
-                          )
-                        : Container(
-                            height: 0,
-                          ),
-                    SizedBox(
-                      height: SizeConfig.blockVertical * 3,
-                    ),
-                    widget.getSettingsData!.result[0].loginWithGmail == "On"
-                        ? InkWell(
-                            onTap: () {
-                              signupGoogle(context);
-                            },
-                            // ignore: prefer_const_constructors
-                            child: GoogleAndFacebookButton(
-                              iconTitle: "Login With Google".tr(),
-                              iconImage:
-                                  "assets/images/login_page_images/google.svg",
-                            ),
-                          )
-                        : const Text(""),
-                    SizedBox(
-                      height: SizeConfig.blockVertical * 2,
-                    ),
-                    widget.getSettingsData!.result[0].loginWithFacebook == "On"
-                        ? InkWell(
-                            onTap: () async {
-                              await signInWithFacebook().then((value) async {
-                                Map<String, dynamic>? data =
-                                    value.additionalUserInfo!.profile;
+                                initialCountryCode: 'IN',
+                                onChanged: (phone) {
+                                  phoneNumberCountryCode = phone.completeNumber;
+                                  debugPrint('===> ${phone.completeNumber}');
+                                },
+                                onCountryChanged: (value) {},
+                              )
+                            : const SizedBox(
+                                height: 0,
+                              ),
+                        SizedBox(
+                          height: SizeConfig.blockVertical * 4,
+                        ),
+                        logindata.getSettingModel.result?[0].loginWithMobile ==
+                                "On"
+                            ? InkWell(
+                                onTap: () async {
+                                  await auth.verifyPhoneNumber(
+                                    phoneNumber: phoneNumberCountryCode,
+                                    verificationCompleted:
+                                        (phoneAuthCredential) async {},
+                                    verificationFailed: (verificationFailed) {},
+                                    codeSent: (verificationIdReal,
+                                        resendingToken) async {
+                                      setState(() {
+                                        verificationId = verificationIdReal;
+                                        currentState =
+                                            LoginScreen.enterOTPNumber;
 
-                                await ApiMethods.login(
-                                    email: data!["email"],
-                                    username: data["name"],
-                                    type: "2");
-
-                                await SharedPrefe.saveUserProfileData(
-                                    email: data["email"],
-                                    userName: data["name"],
-                                    pic: data["picture"]["data"]["url"],
-                                    type: "2",
-                                    login: "Off");
-                              });
-
-                              Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => HomePage(
-                                            getSettingsdata:
-                                                widget.getSettingsData,
-                                          )));
-                            },
-                            child: GoogleAndFacebookButton(
-                              iconTitle: "Login With Facebook".tr(),
-
-                              // Facebook SignIn Method
-                              iconImage:
-                                  "assets/images/login_page_images/facebook.svg",
-                            ),
-                          )
-                        : const Text(""),
-                    SizedBox(
-                      height: SizeConfig.blockVertical * 2,
-                    ),
-                    if (Platform.isIOS)
-                      SignInWithAppleButton(
-                        onPressed: () async {
-                          final credential =
-                              await SignInWithApple.getAppleIDCredential(
-                            scopes: [
-                              AppleIDAuthorizationScopes.email,
-                              AppleIDAuthorizationScopes.fullName,
-                            ],
-                            webAuthenticationOptions: WebAuthenticationOptions(
-                              // TODO: Set the `clientId` and `redirectUri` arguments to the values you entered in the Apple Developer portal during the setup
-                              clientId:
-                                  'de.lunaone.flutter.signinwithappleexample.service',
-
-                              redirectUri:
-                                  // For web your redirect URI needs to be the host of the "current page",
-                                  // while for Android you will be using the API server that redirects back into your app via a deep link
-                                  kIsWeb
-                                      ? Uri.parse(
-                                          'https://${window.location.host}/')
-                                      : Uri.parse(
-                                          'https://flutter-sign-in-with-apple-example.glitch.me/callbacks/sign_in_with_apple',
+                                        startOTPExpireTime();
+                                        wait = false;
+                                        setState(() {
+                                          start = 59;
+                                          wait = true;
+                                        });
+                                      });
+                                    },
+                                    codeAutoRetrievalTimeout:
+                                        (String verificationID) {},
+                                  );
+                                },
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: SizeConfig.blockVertical * 6 + 3,
+                                  child: Ink(
+                                    decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            colorPrimary,
+                                            colorPrimaryDark
+                                          ],
+                                          begin: Alignment.centerLeft,
+                                          end: Alignment.centerRight,
                                         ),
-                            ),
-                            // TODO: Remove these if you have no need for them
-                            nonce: 'example-nonce',
-                            state: 'example-state',
-                          );
+                                        borderRadius:
+                                            BorderRadius.circular(30.0)),
+                                    child: Container(
+                                      width: double.infinity,
+                                      alignment: Alignment.center,
+                                      child: Text("Login".tr(),
+                                          textAlign: TextAlign.center,
+                                          style: Fonts.login),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : const SizedBox(
+                                height: 0,
+                              ),
+                        SizedBox(
+                          height: SizeConfig.blockVertical * 3,
+                        ),
+                        logindata.getSettingModel.result?[0].loginWithMobile ==
+                                    "On" &&
+                                logindata.getSettingModel.result?[0]
+                                        .loginWithGmail ==
+                                    "On"
+                            ? SizedBox(
+                                width: double.infinity,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      height: SizeConfig.blockHorizontal / 2,
+                                      color: nobel,
+                                      width: 90,
+                                    ),
+                                    Container(
+                                      margin: const EdgeInsets.only(
+                                          left: 6, right: 6),
+                                      child: Text(
+                                        "or".tr(),
+                                        style: Fonts.or,
+                                      ),
+                                    ),
+                                    Container(
+                                      height: SizeConfig.blockHorizontal / 2,
+                                      color: nobel,
+                                      width: 90,
+                                    )
+                                  ],
+                                ),
+                              )
+                            : Container(
+                                height: 0,
+                              ),
+                        SizedBox(
+                          height: SizeConfig.blockVertical * 3,
+                        ),
+                        logindata.getSettingModel.result?[0].loginWithGmail ==
+                                "On"
+                            ? InkWell(
+                                onTap: () {
+                                  signupGoogle(context);
+                                },
+                                // ignore: prefer_const_constructors
+                                child: GoogleAndFacebookButton(
+                                  iconTitle: "Login With Google".tr(),
+                                  iconImage:
+                                      "assets/images/login_page_images/google.svg",
+                                ),
+                              )
+                            : const Text(""),
+                        SizedBox(
+                          height: SizeConfig.blockVertical * 2,
+                        ),
+                        logindata.getSettingModel.result?[0]
+                                    .loginWithFacebook ==
+                                "On"
+                            ? InkWell(
+                                onTap: () async {
+                                  await signInWithFacebook()
+                                      .then((value) async {
+                                    Map<String, dynamic>? data =
+                                        value.additionalUserInfo!.profile;
 
-                          // ignore: avoid_print
-                          print(credential);
+                                    login(data!["email"], data["name"], 2);
+                                  });
+                                },
+                                child: GoogleAndFacebookButton(
+                                  iconTitle: "Login With Facebook".tr(),
 
-                          // This is the endpoint that will convert an authorization code obtained
-                          // via Sign in with Apple into a session in your system
-                          final signInWithAppleEndpoint = Uri(
-                            scheme: 'https',
-                            host:
-                                'flutter-sign-in-with-apple-example.glitch.me',
-                            path: '/sign_in_with_apple',
-                            queryParameters: <String, String>{
-                              'code': credential.authorizationCode,
-                              if (credential.givenName != null)
-                                'firstName': credential.givenName!,
-                              if (credential.familyName != null)
-                                'lastName': credential.familyName!,
-                              'useBundleId': !kIsWeb &&
-                                      (Platform.isIOS || Platform.isMacOS)
-                                  ? 'true'
-                                  : 'false',
-                              if (credential.state != null)
-                                'state': credential.state!,
+                                  // Facebook SignIn Method
+                                  iconImage:
+                                      "assets/images/login_page_images/facebook.svg",
+                                ),
+                              )
+                            : const Text(""),
+                        SizedBox(
+                          height: SizeConfig.blockVertical * 2,
+                        ),
+                        if (Platform.isIOS)
+                          SignInWithAppleButton(
+                            onPressed: () async {
+                              final credential =
+                                  await SignInWithApple.getAppleIDCredential(
+                                scopes: [
+                                  AppleIDAuthorizationScopes.email,
+                                  AppleIDAuthorizationScopes.fullName,
+                                ],
+                                webAuthenticationOptions:
+                                    WebAuthenticationOptions(
+                                  clientId:
+                                      'de.lunaone.flutter.signinwithappleexample.service',
+                                  redirectUri:
+                                      // For web your redirect URI needs to be the host of the "current page",
+                                      // while for Android you will be using the API server that redirects back into your app via a deep link
+                                      kIsWeb
+                                          ? Uri.parse(
+                                              'https://${window.location.host}/')
+                                          : Uri.parse(
+                                              'https://flutter-sign-in-with-apple-example.glitch.me/callbacks/sign_in_with_apple',
+                                            ),
+                                ),
+                                nonce: 'example-nonce',
+                                state: 'example-state',
+                              );
+
+                              // ignore: avoid_print
+                              print(credential);
+
+                              // This is the endpoint that will convert an authorization code obtained
+                              // via Sign in with Apple into a session in your system
+                              final signInWithAppleEndpoint = Uri(
+                                scheme: 'https',
+                                host:
+                                    'flutter-sign-in-with-apple-example.glitch.me',
+                                path: '/sign_in_with_apple',
+                                queryParameters: <String, String>{
+                                  'code': credential.authorizationCode,
+                                  if (credential.givenName != null)
+                                    'firstName': credential.givenName!,
+                                  if (credential.familyName != null)
+                                    'lastName': credential.familyName!,
+                                  'useBundleId': !kIsWeb &&
+                                          (Platform.isIOS || Platform.isMacOS)
+                                      ? 'true'
+                                      : 'false',
+                                  if (credential.state != null)
+                                    'state': credential.state!,
+                                },
+                              );
+
+                              final session = await http.Client().post(
+                                signInWithAppleEndpoint,
+                              );
+
+                              // If we got this far, a session based on the Apple ID credential has been created in your system,
+                              // and you can now set this as the app's session
+                              // ignore: avoid_print
+                              print(session.body);
                             },
-                          );
-
-                          final session = await http.Client().post(
-                            signInWithAppleEndpoint,
-                          );
-
-                          // If we got this far, a session based on the Apple ID credential has been created in your system,
-                          // and you can now set this as the app's session
-                          // ignore: avoid_print
-                          print(session.body);
-                        },
-                      )
-                  ],
+                          )
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                SizedBox(
+                  height: SizeConfig.blockVertical * 5,
+                ),
+              ],
             ),
-            SizedBox(
-              height: SizeConfig.blockVertical * 5,
-            ),
-            Platform.isAndroid
-                ? StaticData.bannerAd == "1"
-                    ? adContainer
-                    : const Text("")
-                : StaticData.iosBannerAd == "1"
-                    ? adContainer
-                    : const Text(""),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -598,8 +551,7 @@ class _LoginPageState extends State<LoginPage> {
                     height: SizeConfig.blockVertical + 2,
                   ),
                   Text(
-                    // ignore: unnecessary_brace_in_string_interps
-                    "${phoneNumberCountryCode} ${mobileNumberController.text.toString()}",
+                    phoneNumberCountryCode,
                     style: Fonts.mobileNumber,
                   ),
                   SizedBox(
@@ -718,8 +670,7 @@ class _LoginPageState extends State<LoginPage> {
                             wait = true;
                           });
                           await auth.verifyPhoneNumber(
-                              phoneNumber:
-                                  "$phoneNumberCountryCode${mobileNumberController.text}",
+                              phoneNumber: phoneNumberCountryCode,
                               verificationCompleted:
                                   (phoneAuthCredential) async {},
                               verificationFailed: (verificationFailed) {},

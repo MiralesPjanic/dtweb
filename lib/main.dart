@@ -6,8 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview/pages/splashscreen.dart';
-import 'package:webview/provider/homepageprovider.dart';
-import 'package:webview/provider/webviewprovider.dart';
+import 'package:webview/provider/apiprovider.dart';
 import 'package:webview/responsible_file/responsible_file.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:webview/utils/constants.dart';
@@ -30,10 +29,6 @@ Future<void> main() async {
   initScreen = preferences.getInt("initScreen");
   await preferences.setInt("initScreen", 1);
 
-  bool _enableConsentButton = false;
-  bool _requireConsent = true;
-  String _debugLabelString = "";
-
   //Remove this method to stop OneSignal Debugging
   OneSignal.shared.setLogLevel(OSLogLevel.verbose, OSLogLevel.none);
 
@@ -41,25 +36,23 @@ Future<void> main() async {
 
 // The promptForPushNotificationsWithUserResponse function will show the iOS push notification prompt. We recommend removing the following code and instead using an In-App Message to prompt for notification permission
   OneSignal.shared.promptUserForPushNotificationPermission().then((accepted) {
-    print("Accepted permission: $accepted");
+    debugPrint("Accepted permission: $accepted");
   });
 
-  runApp(
-    EasyLocalization(
-      path: 'assets/translations', //
-      supportedLocales: const [
-        Locale('en'),
-        Locale('hi'),
-        Locale('ar'),
-        Locale('fr', 'FR')
+  runApp(EasyLocalization(
+    path: 'assets/translations', //
+    supportedLocales: const [
+      Locale('en'),
+      Locale('hi'),
+      Locale('ar'),
+      Locale('fr', 'FR')
+    ],
+    child: MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ApiProvider()),
       ],
-
-      child: MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => HomePageProvider()),
-          ChangeNotifierProvider(create: (_) => WebViewProvider()),
-        ],
-        child: LayoutBuilder(builder: (context, constraints) {
+      child: LayoutBuilder(
+        builder: (context, constraints) {
           return OrientationBuilder(builder: (context, orientation) {
             SizeConfig().init(constraints, orientation);
             return MaterialApp(
@@ -73,8 +66,8 @@ Future<void> main() async {
               },
             );
           });
-        }),
+        },
       ),
     ),
-  );
+  ));
 }
