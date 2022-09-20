@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 import 'package:badges/badges.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -39,14 +40,8 @@ class _HomePageState extends State<HomePage> {
   String androidId = "";
   SharedPre sharePref = SharedPre();
 
-  var androidBannerAdsId = "";
-  var iosBannerAdsId = "";
   var bannerad = "";
   var banneradIos = "";
-  var interstitalad = "",
-      iosinterstitalad = "",
-      rewardad = "",
-      iosrewardad = "";
 
   String? pic, username, email, type;
 
@@ -114,22 +109,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   getAdmobId() async {
-    androidBannerAdsId = await sharePref.read("banner_adid") ?? "";
-    iosBannerAdsId = await sharePref.read("ios_banner_adid") ?? "";
-
     bannerad = await sharePref.read("banner_ad") ?? "";
     banneradIos = await sharePref.read("ios_banner_ad") ?? "";
 
-    interstitalad = await sharePref.read("interstital_ad") ?? "";
-    iosinterstitalad = await sharePref.read("ios_interstital_ad") ?? "";
-
-    rewardad = await sharePref.read("reward_ad") ?? "";
-    iosrewardad = await sharePref.read("ios_reward_ad") ?? "";
-
-    debugPrint("Android id:====$androidBannerAdsId");
-    debugPrint("ios id:====$banneradIos");
-
     AdHelper.createInterstitialAd();
+
     AdHelper.createRewardedAd();
   }
 
@@ -339,6 +323,7 @@ class _HomePageState extends State<HomePage> {
                 i < objectMenuProvider.floatModel.result!.length;
                 i++) ...[
               FloatingActionButton(
+                heroTag: "btn$i",
                 mini: true,
                 backgroundColor: colorPrimary,
                 child: SizedBox(
@@ -377,6 +362,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    log("Build method called");
+
     var webViewProvider = Provider.of<ApiProvider>(context, listen: false);
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -663,7 +650,7 @@ class _HomePageState extends State<HomePage> {
                               checkUserConnection().then((value) {
                                 return null;
                               });
-                              setState(() {});
+                              // setState(() {});
                             },
                             androidOnPermissionRequest:
                                 (controller, origin, resources) async {
@@ -777,10 +764,7 @@ class _HomePageState extends State<HomePage> {
                               selectedItemColor: colorAccent,
                               unselectedItemColor: colorAccent,
                               onTap: (i) async {
-                                if (interstitalad == "1" ||
-                                    iosinterstitalad == "1") {
-                                  AdHelper.showInterstitialAd();
-                                }
+                                AdHelper.showInterstitialAd();
 
                                 if (bottomMenu.floatingValueCurrent == true) {
                                   bottomMenu.floatingOnOff(
@@ -800,7 +784,7 @@ class _HomePageState extends State<HomePage> {
                                                     .toString())),
                                           )
                                         : null,
-                                    setState(() {}),
+                                    // setState(() {}),
                                   };
                                 });
                               },

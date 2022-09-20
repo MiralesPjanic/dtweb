@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview/pages/home_page.dart';
 import 'package:webview/provider/apiprovider.dart';
 import 'package:webview/utils/colors.dart';
+
+import '../utils/adhelper.dart';
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({Key? key}) : super(key: key);
@@ -18,13 +21,12 @@ class _NotificationPageState extends State<NotificationPage> {
   void initState() {
     super.initState();
     var apiprovide = Provider.of<ApiProvider>(context, listen: false);
+    apiprovide.getNotificationList();
+    AdHelper.createRewardedAd();
   }
 
   @override
   Widget build(BuildContext context) {
-    var apiprovide = Provider.of<ApiProvider>(context);
-    apiprovide.getNotificationList();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text("Notifications"),
@@ -32,9 +34,10 @@ class _NotificationPageState extends State<NotificationPage> {
       ),
       body: Consumer<ApiProvider>(
         builder: (context, snapshot, child) {
-          if (snapshot.loading) {
-            return CircularProgressIndicator();
+          if (!snapshot.loading) {
+            return Center(child: CircularProgressIndicator());
           } else {
+            AdHelper.showRewardedAd();
             return ListView.builder(
                 itemCount: snapshot.notificationModel.result?.length ?? 0,
                 itemBuilder: (context, index) {

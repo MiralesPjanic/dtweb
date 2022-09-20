@@ -1,44 +1,51 @@
 {
   "project_info": {
-    "project_number": "476849697961",
-    "firebase_url": "https://myallapp-f9c13.firebaseio.com",
-    "project_id": "myallapp-f9c13",
-    "storage_bucket": "myallapp-f9c13.appspot.com"
+    "project_number": "632145227488",
+    "project_id": "myapp-e3d24",
+    "storage_bucket": "myapp-e3d24.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:476849697961:android:cada782869263a004f65b8",
+        "mobilesdk_app_id": "1:632145227488:android:5b83573336884b5d17ea85",
         "android_client_info": {
           "package_name": "com.divinetechs.dtweb"
         }
       },
       "oauth_client": [
         {
-          "client_id": "476849697961-s1a5bl0mat7ps4t4efbni95lc96i7641.apps.googleusercontent.com",
+          "client_id": "632145227488-h0350v1gm6duqscllgg2f04vch5jlhmb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.divinetechs.dtweb",
+            "certificate_hash": "1ac545ebca9bc1bd1886f3f47b1467234c77e3f1"
+          }
+        },
+        {
+          "client_id": "632145227488-2rfqvdh74704kd5curd0ti14o6ulr2ek.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBZLp0GKlwhrFBjRIEELxCvyVGj49_1VYw"
+          "current_key": "AIzaSyCfKnQO2Rmiy6PkX3A3YNAR0xs-GzYcIjo"
         },
         {
-          "current_key": "AIzaSyBlRhmMUEZACWClwItG97C-llEZ353APLs"
+          "current_key": "AIzaSyC1QPv2gNWQAE3Ex8reNbAthB5dKapAEiM"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "476849697961-mp93cmobo60tggji6cl0gts0uqt42tdm.apps.googleusercontent.com",
+              "client_id": "632145227488-2rfqvdh74704kd5curd0ti14o6ulr2ek.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "476849697961-t8pghg7feodued7qs0qstsqbau6acie7.apps.googleusercontent.com",
+              "client_id": "632145227488-4a5uo8hskvg72vhvsvhsb7cddevqfijd.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.proceed.development"
+                "bundle_id": "com.divinetechs.allinone"
               }
             }
           ]

@@ -11,6 +11,7 @@ import 'package:webview/utils/constants.dart';
 import 'package:webview/utils/sharedpre.dart';
 import 'package:webview/utils/string_to_color_converter.dart';
 import '../responsible_file/responsible_file.dart';
+import '../utils/adhelper.dart';
 import '../widgets/no_data.dart';
 import 'login_page.dart';
 
@@ -29,12 +30,10 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
+    AdHelper.getAds();
     getisFirst();
-
     debugPrint("Splash intit method");
-
     apiprovide = Provider.of<ApiProvider>(context, listen: false);
-
     callGeneralSettingsApi();
   }
 

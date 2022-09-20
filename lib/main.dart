@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview/pages/splashscreen.dart';
@@ -24,6 +25,7 @@ Future<void> main() async {
   } else {
     await Firebase.initializeApp();
   }
+  MobileAds.instance.initialize();
   await EasyLocalization.ensureInitialized();
   SharedPreferences preferences = await SharedPreferences.getInstance();
   initScreen = preferences.getInt("initScreen");
