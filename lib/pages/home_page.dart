@@ -676,6 +676,7 @@ class _HomePageState extends State<HomePage> {
                               return NavigationActionPolicy.ALLOW;
                             },
                             onLoadStop: (controller, url) async {
+                              log("onLoadStop ${controller.getContentHeight()}");
                               pullToRefreshController.endRefreshing();
                             },
                             onLoadError: (controller, url, code, message) {
@@ -683,7 +684,9 @@ class _HomePageState extends State<HomePage> {
                             },
                             onUpdateVisitedHistory:
                                 (controller, url, androidIsReload) {},
-                            onConsoleMessage: (controller, consoleMessage) {},
+                            onConsoleMessage: (controller, consoleMessage) {
+                              log("onConsoleMessage ${controller.getContentHeight()}");
+                            },
                           ),
                           activeConnection == false
                               ? Container(
@@ -728,95 +731,73 @@ class _HomePageState extends State<HomePage> {
   }
 
   bottomBar() {
-    return Builder(builder: (context) {
-      return Container(
-        color: Colors.transparent,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            if (bannerad == "1" || banneradIos == "1")
-              SizedBox(
-                height: 60,
-                child: AdWidget(
-                    ad: AdHelper.createBannerAd()..load(), key: UniqueKey()),
-              ),
-            Container(
-              color: colorPrimary,
-              child: Builder(builder: (context) {
-                debugPrint(Constants.selectedIndex.toString() +
-                    "Selected Index in buildr");
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      height: 70,
-                      width: MediaQuery.of(context).size.width,
-                      child: ListView.builder(
-                        itemCount: 1,
-                        itemBuilder: (context, index) {
-                          debugPrint("1");
-                          return Consumer<ApiProvider>(
-                              builder: (context, bottomMenu, widget) {
-                            return SalomonBottomBar(
-                              currentIndex:
-                                  bottomMenu.currentIndex, //_selectedIndex,
-                              selectedItemColor: colorAccent,
-                              unselectedItemColor: colorAccent,
-                              onTap: (i) async {
-                                AdHelper.showInterstitialAd();
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        if (bannerad == "1" || banneradIos == "1")
+          SizedBox(
+            height: 60,
+            child: AdWidget(
+                ad: AdHelper.createBannerAd()..load(), key: UniqueKey()),
+          ),
+        Container(
+            margin: const EdgeInsets.only(left: 10, right: 10, bottom: 10),
+            width: MediaQuery.of(context).size.width - 50,
+            decoration: BoxDecoration(
+                color: colorPrimary,
+                borderRadius: BorderRadius.all(Radius.circular(20))),
+            child: SizedBox(
+              height: 70,
+              width: MediaQuery.of(context).size.width,
+              child:
+                  Consumer<ApiProvider>(builder: (context, bottomMenu, widget) {
+                return SalomonBottomBar(
+                  currentIndex: bottomMenu.currentIndex, //_selectedIndex,
+                  selectedItemColor: colorAccent,
+                  unselectedItemColor: colorAccent,
+                  onTap: (i) async {
+                    AdHelper.showInterstitialAd();
 
-                                if (bottomMenu.floatingValueCurrent == true) {
-                                  bottomMenu.floatingOnOff(
-                                      oldFloatingValue: false);
-                                }
-                                bottomMenu.changeBottomMenu(oldIndex: i);
-                                checkUserConnection().then((value) async {
-                                  return {
-                                    bottomMenu.changeUrl(
-                                        oldUrl: bottomMenu
-                                            .menuModel.result![i].url),
-                                    activeConnection
-                                        ? await webViewController!.loadUrl(
-                                            urlRequest: URLRequest(
-                                                url: Uri.parse(bottomMenu
-                                                    .currentUrl
-                                                    .toString())),
-                                          )
-                                        : null,
-                                    // setState(() {}),
-                                  };
-                                });
-                              },
-                              items: [
-                                for (int i = 0;
-                                    i < bottomMenu.menuModel.result!.length;
-                                    i++)
-                                  SalomonBottomBarItem(
-                                      icon: Image.network(
-                                        bottomMenu.menuModel.result![i].image
-                                            .toString(),
-                                        height: 22,
-                                        color: colorAccent,
-                                      ),
-                                      title: Text(
-                                          bottomMenu.menuModel.result?[i].title
-                                                  .toString() ??
-                                              "",
-                                          style: TextStyle(color: colorAccent)))
-                              ],
-                            );
-                          });
-                        },
-                      ),
-                    ),
+                    if (bottomMenu.floatingValueCurrent == true) {
+                      bottomMenu.floatingOnOff(oldFloatingValue: false);
+                    }
+                    bottomMenu.changeBottomMenu(oldIndex: i);
+                    checkUserConnection().then((value) async {
+                      return {
+                        bottomMenu.changeUrl(
+                            oldUrl: bottomMenu.menuModel.result![i].url),
+                        activeConnection
+                            ? await webViewController!.loadUrl(
+                                urlRequest: URLRequest(
+                                    url: Uri.parse(
+                                        bottomMenu.currentUrl.toString())),
+                              )
+                            : null,
+                        // setState(() {}),
+                      };
+                    });
+                  },
+                  items: [
+                    for (int i = 0;
+                        i < bottomMenu.menuModel.result!.length;
+                        i++)
+                      SalomonBottomBarItem(
+                          icon: Image.network(
+                            bottomMenu.menuModel.result![i].image.toString(),
+                            height: 22,
+                            color: colorAccent,
+                          ),
+                          title: Text(
+                              bottomMenu.menuModel.result?[i].title
+                                      .toString() ??
+                                  "",
+                              style: TextStyle(color: colorAccent)))
                   ],
                 );
               }),
-            ),
-          ],
-        ),
-      );
-    });
+            )),
+      ],
+    );
   }
 }
