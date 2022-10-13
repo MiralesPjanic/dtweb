@@ -30,7 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    AdHelper.getAds();
+
     getisFirst();
     debugPrint("Splash intit method");
     apiprovide = Provider.of<ApiProvider>(context, listen: false);
@@ -38,6 +38,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   getisFirst() async {
+    await AdHelper.getAds();
     isfirst = await sharePref.read("isfirst");
     isLogin = await sharePref.read("login");
     debugPrint('===> $isfirst');

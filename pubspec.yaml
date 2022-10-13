@@ -50,7 +50,7 @@ dependencies:
   firebase_messaging: ^11.2.6
   intro_slider: ^3.0.3
   dio: ^4.0.4
-  flutter_inappwebview: ^5.4.3+7
+  flutter_inappwebview: ^5.4.4+3
   dots_indicator: ^2.1.0
   shrink_sidemenu: ^2.0.0+2-null-safety
   salomon_bottom_bar: ^3.3.0
@@ -75,6 +75,9 @@ dependencies:
   #OneSignal Notification
   onesignal_flutter: ^3.3.2
 
+  permission_handler: ^10.1.0
+  flutter_downloader: ^1.8.4
+  path_provider: ^2.0.11
 
 
 dev_dependencies:

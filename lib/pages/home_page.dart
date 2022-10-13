@@ -3,14 +3,19 @@ import 'dart:io';
 import 'package:badges/badges.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
 import 'package:flutter_arc_speed_dial/flutter_speed_dial_menu_button.dart';
 import 'package:flutter_arc_speed_dial/main_menu_floating_action_button.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview/provider/apiprovider.dart';
 import 'package:webview/responsible_file/responsible_file.dart';
 import 'package:webview/theme_this_time_not_usable/fonts.dart';
@@ -31,7 +36,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   var currentClikedBottomMenu = 0;
   String? getMenuA = Constants.webViewUrl;
   String notificationTitle = 'No Title';
@@ -45,15 +50,29 @@ class _HomePageState extends State<HomePage> {
 
   String? pic, username, email, type;
 
+  bool permissionGranted = false;
+
+  ScrollController? _hideButtonController;
+  var _isVisible;
+
   final GlobalKey webViewKey = GlobalKey();
   InAppWebViewController? webViewController;
   InAppWebViewGroupOptions options = InAppWebViewGroupOptions(
       crossPlatform: InAppWebViewOptions(
-        useShouldOverrideUrlLoading: true,
-        mediaPlaybackRequiresUserGesture: false,
-      ),
+          useShouldOverrideUrlLoading: true,
+          mediaPlaybackRequiresUserGesture: false,
+          useOnDownloadStart: true,
+          javaScriptEnabled: true,
+          cacheEnabled: true,
+          userAgent:
+              "Mozilla/5.0 (Linux; Android 9; LG-H870 Build/PKQ1.190522.001) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/83.0.4103.106 Mobile Safari/537.36",
+          verticalScrollBarEnabled: false,
+          horizontalScrollBarEnabled: false,
+          transparentBackground: true),
       android: AndroidInAppWebViewOptions(
         useHybridComposition: true,
+        thirdPartyCookiesEnabled: true,
+        allowFileAccess: true,
       ),
       ios: IOSInAppWebViewOptions(
         allowsInlineMediaPlayback: true,
@@ -105,6 +124,27 @@ class _HomePageState extends State<HomePage> {
     firebaseMessaging.titleCtlr.stream.listen(_changeTitle);
     getAdmobId();
     getUserinfo();
+
+    _isVisible = true;
+    _hideButtonController = ScrollController();
+    _hideButtonController?.addListener(() {
+      if (_hideButtonController?.position.userScrollDirection ==
+          ScrollDirection.reverse) {
+        if (_isVisible)
+          setState(() {
+            _isVisible = false;
+            print("**** $_isVisible up");
+          });
+      }
+      if (_hideButtonController?.position.userScrollDirection ==
+          ScrollDirection.forward) {
+        if (!_isVisible)
+          setState(() {
+            _isVisible = true;
+            print("**** $_isVisible down");
+          });
+      }
+    });
     super.initState();
   }
 
@@ -365,8 +405,11 @@ class _HomePageState extends State<HomePage> {
     log("Build method called");
 
     var webViewProvider = Provider.of<ApiProvider>(context, listen: false);
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: colorPrimary,
+      statusBarIconBrightness: Theme.of(context).brightness == Brightness.dark
+          ? Brightness.light
+          : Brightness.dark,
     ));
     void _handleMenuButtonPressed() {
       _advancedDrawerController.showDrawer();
@@ -394,231 +437,236 @@ class _HomePageState extends State<HomePage> {
                   : false,
           child: WillPopScope(
             onWillPop: () => _onWillPop(context),
-            child: Scaffold(
-              floatingActionButtonLocation:
-                  FloatingActionButtonLocation.endDocked,
-              floatingActionButton:
-                  provider.getSettingModel.result?[0].floatingMenuScreen == "1"
-                      ? _getFloatingActionButton()
-                      : null,
-              backgroundColor: white,
-              appBar: provider.getSettingModel.result?[0].fullScreen ==
-                      "Full screen"
-                  ? null
-                  : AppBar(
-                      backgroundColor: colorPrimary,
-                      leading: provider.getSettingModel.result?[0].fullScreen ==
-                                  "Full screen" ||
-                              provider.getSettingModel.result?[0].sideDrawer ==
-                                  ""
-                          ? null
-                          : SizedBox(
-                              child: IconButton(
-                                icon: const Icon(Icons.menu),
-                                onPressed: () {
-                                  debugPrint("Local language" +
-                                      EasyLocalization.of(context)!
-                                          .currentLocale
-                                          .toString());
-                                  _handleMenuButtonPressed();
-                                },
-                                // open side menu
-                              ),
-                              height: double.infinity,
-                            ),
-                      actions: [
-                        const SizedBox(width: 10),
-                        InkWell(
-                          onTap: () {
-                            AdHelper.showRewardedAd();
-                            Navigator.of(context).push(MaterialPageRoute(
-                                builder: (context) =>
-                                    const NotificationPage()));
-                          },
-                          child: Badge(
-                            showBadge: false,
-                            badgeColor: white,
-                            padding: const EdgeInsets.all(2),
-                            position: BadgePosition.topStart(top: 16, start: 9),
-                            badgeContent: const Text(
-                              '3',
-                              style: TextStyle(color: red, fontSize: 10),
-                            ),
-                            child: Image.asset(
-                                "assets/images/home_page_images/notification.png",
-                                height: 22),
-                          ),
-                        ),
-                        const SizedBox(width: 20),
-                        if (provider.getSettingModel.result?[0].isLogin == 'On')
+            child: SafeArea(
+              child: Scaffold(
+                floatingActionButtonLocation:
+                    FloatingActionButtonLocation.endDocked,
+                floatingActionButton:
+                    provider.getSettingModel.result?[0].floatingMenuScreen ==
+                            "1"
+                        ? _getFloatingActionButton()
+                        : null,
+                appBar: provider.getSettingModel.result?[0].fullScreen ==
+                        "Full screen"
+                    ? null
+                    : AppBar(
+                        backgroundColor: colorPrimary,
+                        leading:
+                            provider.getSettingModel.result?[0].fullScreen ==
+                                        "Full screen" ||
+                                    provider.getSettingModel.result?[0]
+                                            .sideDrawer ==
+                                        ""
+                                ? null
+                                : SizedBox(
+                                    child: IconButton(
+                                      icon: const Icon(Icons.menu),
+                                      onPressed: () {
+                                        debugPrint("Local language" +
+                                            EasyLocalization.of(context)!
+                                                .currentLocale
+                                                .toString());
+                                        _handleMenuButtonPressed();
+                                      },
+                                      // open side menu
+                                    ),
+                                    height: double.infinity,
+                                  ),
+                        actions: [
+                          const SizedBox(width: 10),
                           InkWell(
                             onTap: () {
-                              AwesomeDialog(
-                                  customHeader: Container(
-                                    margin: const EdgeInsets.all(15),
-                                    child: Image.network(
-                                      provider.getSettingModel.result?[0]
-                                              .appLogo
-                                              .toString() ??
-                                          "",
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                  btnOkText: "Yes",
-                                  btnCancelColor: red,
-                                  btnOkColor: green,
-                                  btnCancelText: "No",
-                                  context: context,
-                                  dialogType: DialogType.WARNING,
-                                  headerAnimationLoop: false,
-                                  animType: AnimType.TOPSLIDE,
-                                  showCloseIcon: true,
-                                  closeIcon: const Icon(
-                                      Icons.close_fullscreen_outlined),
-                                  title: 'Logout',
-                                  desc: 'are you sure logout',
-                                  btnCancelOnPress: () {},
-                                  onDissmissCallback: (type) {
-                                    debugPrint(
-                                        'Dialog Dissmiss from callback $type');
-                                  },
-                                  btnOkOnPress: () async {
-                                    await sharePref.clear();
-
-                                    Navigator.of(context).pushReplacement(
-                                        MaterialPageRoute(
-                                            builder: (context) => LoginPage()));
-                                  }).show();
+                              AdHelper.showRewardedAd();
+                              Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) =>
+                                      const NotificationPage()));
                             },
-                            child: SizedBox(
-                              child: Image.asset(
-                                "assets/images/home_page_images/logout.png",
-                                width: 25,
+                            child: Badge(
+                              showBadge: false,
+                              badgeColor: white,
+                              padding: const EdgeInsets.all(2),
+                              position:
+                                  BadgePosition.topStart(top: 16, start: 9),
+                              badgeContent: const Text(
+                                '3',
+                                style: TextStyle(color: red, fontSize: 10),
                               ),
+                              child: Image.asset(
+                                  "assets/images/home_page_images/notification.png",
+                                  height: 22),
                             ),
                           ),
-                        const SizedBox(width: 20),
-                        PopupMenuButton<int>(
-                          icon: const Icon(Icons.settings),
-                          itemBuilder: (context) => [
-                            PopupMenuItem<int>(
-                              value: 0,
-                              child: Text("Select Preferred Language".tr()),
-                            ),
-                            const PopupMenuDivider(),
-                            PopupMenuItem<int>(
-                              value: 0,
-                              child: const Text("English"),
+                          const SizedBox(width: 20),
+                          if (provider.getSettingModel.result?[0].isLogin ==
+                              'On')
+                            InkWell(
                               onTap: () {
-                                EasyLocalization.of(context)!
-                                    .setLocale(const Locale('en'));
-                              },
-                            ),
-                            PopupMenuItem<int>(
-                              value: 0,
-                              child: const Text("हिन्दी"),
-                              onTap: () {
-                                EasyLocalization.of(context)!
-                                    .setLocale(const Locale('hi'));
-                              },
-                            ),
-                            PopupMenuItem<int>(
-                              value: 0,
-                              child: const Text("français"),
-                              onTap: () {
-                                EasyLocalization.of(context)!
-                                    .setLocale(const Locale('fr', 'FR'));
-                              },
-                            ),
-                            PopupMenuItem<int>(
-                              value: 0,
-                              child: const Text("عربي"),
-                              onTap: () {
-                                EasyLocalization.of(context)!
-                                    .setLocale(const Locale('ar'));
-                              },
-                            ),
-                            const PopupMenuDivider(),
-                            if (provider.getSettingModel.result?[0].isLogin ==
-                                "On")
-                              PopupMenuItem<int>(
-                                  onTap: () {
-                                    Future.delayed(
-                                        const Duration(
-                                          seconds: 1,
-                                        ), () {
-                                      AwesomeDialog(
-                                          customHeader: Container(
-                                            margin: const EdgeInsets.all(15),
-                                            child: Image.network(
-                                              provider.getSettingModel
-                                                      .result?[0].appLogo
-                                                      .toString() ??
-                                                  "",
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ),
-                                          btnOkText: "Yes".tr(),
-                                          btnCancelColor: red,
-                                          btnOkColor: green,
-                                          btnCancelText: "No".tr(),
-                                          context: context,
-                                          dialogType: DialogType.WARNING,
-                                          headerAnimationLoop: false,
-                                          animType: AnimType.TOPSLIDE,
-                                          showCloseIcon: true,
-                                          closeIcon: const Icon(
-                                              Icons.close_fullscreen_outlined),
-                                          title: 'Logout'.tr(),
-                                          desc: 'are you sure logout'.tr(),
-                                          btnCancelOnPress: () {},
-                                          onDissmissCallback: (type) {
-                                            debugPrint(
-                                                'Dialog Dissmiss from callback $type');
-                                          },
-                                          btnOkOnPress: () async {
-                                            await sharePref.clear();
+                                AwesomeDialog(
+                                    customHeader: Container(
+                                      margin: const EdgeInsets.all(15),
+                                      child: Image.network(
+                                        provider.getSettingModel.result?[0]
+                                                .appLogo
+                                                .toString() ??
+                                            "",
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    btnOkText: "Yes",
+                                    btnCancelColor: red,
+                                    btnOkColor: green,
+                                    btnCancelText: "No",
+                                    context: context,
+                                    dialogType: DialogType.WARNING,
+                                    headerAnimationLoop: false,
+                                    animType: AnimType.TOPSLIDE,
+                                    showCloseIcon: true,
+                                    closeIcon: const Icon(
+                                        Icons.close_fullscreen_outlined),
+                                    title: 'Logout',
+                                    desc: 'are you sure logout',
+                                    btnCancelOnPress: () {},
+                                    onDissmissCallback: (type) {
+                                      debugPrint(
+                                          'Dialog Dissmiss from callback $type');
+                                    },
+                                    btnOkOnPress: () async {
+                                      await sharePref.clear();
 
-                                            Navigator.of(context)
-                                                .pushReplacement(
-                                                    MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            LoginPage()));
-                                          }).show();
-                                    });
-                                  },
-                                  value: 2,
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.logout,
-                                        color: red,
-                                      ),
-                                      const SizedBox(
-                                        width: 7,
-                                      ),
-                                      Text("Logout".tr())
-                                    ],
-                                  ))
-                          ],
+                                      Navigator.of(context).pushReplacement(
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  LoginPage()));
+                                    }).show();
+                              },
+                              child: SizedBox(
+                                child: Image.asset(
+                                  "assets/images/home_page_images/logout.png",
+                                  width: 25,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(width: 20),
+                          PopupMenuButton<int>(
+                            icon: const Icon(Icons.settings),
+                            itemBuilder: (context) => [
+                              PopupMenuItem<int>(
+                                value: 0,
+                                child: Text("Select Preferred Language".tr()),
+                              ),
+                              const PopupMenuDivider(),
+                              PopupMenuItem<int>(
+                                value: 0,
+                                child: const Text("English"),
+                                onTap: () {
+                                  EasyLocalization.of(context)!
+                                      .setLocale(const Locale('en'));
+                                },
+                              ),
+                              PopupMenuItem<int>(
+                                value: 0,
+                                child: const Text("हिन्दी"),
+                                onTap: () {
+                                  EasyLocalization.of(context)!
+                                      .setLocale(const Locale('hi'));
+                                },
+                              ),
+                              PopupMenuItem<int>(
+                                value: 0,
+                                child: const Text("français"),
+                                onTap: () {
+                                  EasyLocalization.of(context)!
+                                      .setLocale(const Locale('fr', 'FR'));
+                                },
+                              ),
+                              PopupMenuItem<int>(
+                                value: 0,
+                                child: const Text("عربي"),
+                                onTap: () {
+                                  EasyLocalization.of(context)!
+                                      .setLocale(const Locale('ar'));
+                                },
+                              ),
+                              const PopupMenuDivider(),
+                              if (provider.getSettingModel.result?[0].isLogin ==
+                                  "On")
+                                PopupMenuItem<int>(
+                                    onTap: () {
+                                      Future.delayed(
+                                          const Duration(
+                                            seconds: 1,
+                                          ), () {
+                                        AwesomeDialog(
+                                            customHeader: Container(
+                                              margin: const EdgeInsets.all(15),
+                                              child: Image.network(
+                                                provider.getSettingModel
+                                                        .result?[0].appLogo
+                                                        .toString() ??
+                                                    "",
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
+                                            btnOkText: "Yes".tr(),
+                                            btnCancelColor: red,
+                                            btnOkColor: green,
+                                            btnCancelText: "No".tr(),
+                                            context: context,
+                                            dialogType: DialogType.WARNING,
+                                            headerAnimationLoop: false,
+                                            animType: AnimType.TOPSLIDE,
+                                            showCloseIcon: true,
+                                            closeIcon: const Icon(Icons
+                                                .close_fullscreen_outlined),
+                                            title: 'Logout'.tr(),
+                                            desc: 'are you sure logout'.tr(),
+                                            btnCancelOnPress: () {},
+                                            onDissmissCallback: (type) {
+                                              debugPrint(
+                                                  'Dialog Dissmiss from callback $type');
+                                            },
+                                            btnOkOnPress: () async {
+                                              await sharePref.clear();
+
+                                              Navigator.of(context)
+                                                  .pushReplacement(
+                                                      MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              LoginPage()));
+                                            }).show();
+                                      });
+                                    },
+                                    value: 2,
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.logout,
+                                          color: red,
+                                        ),
+                                        const SizedBox(
+                                          width: 7,
+                                        ),
+                                        Text("Logout".tr())
+                                      ],
+                                    ))
+                            ],
+                          ),
+                        ],
+                        title: Text(
+                          provider.getSettingModel.result?[0].appName ?? "",
+                          style: const TextStyle(
+                              color: white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w500),
                         ),
-                      ],
-                      title: Text(
-                        provider.getSettingModel.result?[0].appName ?? "",
-                        style: const TextStyle(
-                            color: white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w500),
                       ),
-                    ),
-              extendBody: true,
-              bottomNavigationBar:
-                  provider.getSettingModel.result?[0].bottomNavigation ==
-                          "Bottom Navigation"
-                      ? bottomBar()
-                      : null,
-              body: SafeArea(
-                child: Column(
+                extendBody: true,
+                bottomNavigationBar:
+                    provider.getSettingModel.result?[0].bottomNavigation ==
+                            "Bottom Navigation"
+                        ? bottomBar()
+                        : null,
+                body: Column(
                   children: [
                     Expanded(
                       child: Stack(
@@ -682,6 +730,31 @@ class _HomePageState extends State<HomePage> {
                             onLoadError: (controller, url, code, message) {
                               pullToRefreshController.endRefreshing();
                             },
+                            onDownloadStartRequest:
+                                (controller, downloadStartRequest) async {
+                              log('===>${downloadStartRequest.url}');
+                              log('===>${controller.webStorage.localStorage.webStorageType}');
+
+                              requestPermission().then((status) async {
+                                if (status == true) {
+                                  if (await canLaunch(
+                                      downloadStartRequest.url.toString())) {
+                                    // Launch the App
+                                    await launch(
+                                        downloadStartRequest.url.toString(),
+                                        forceSafariVC: false,
+                                        forceWebView: false);
+
+                                    // and cancel the request
+                                  }
+                                } else {
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(
+                                    content: const Text('Permision denied'),
+                                  ));
+                                }
+                              });
+                            },
                             onUpdateVisitedHistory:
                                 (controller, url, androidIsReload) {},
                             onConsoleMessage: (controller, consoleMessage) {
@@ -735,69 +808,90 @@ class _HomePageState extends State<HomePage> {
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        if (bannerad == "1" || banneradIos == "1")
-          SizedBox(
+        SizedBox(
             height: 60,
             child: AdWidget(
-                ad: AdHelper.createBannerAd()..load(), key: UniqueKey()),
-          ),
+                ad: AdHelper.createBannerAd()..load(), key: UniqueKey())),
         Container(
             margin: const EdgeInsets.only(left: 10, right: 10, bottom: 10),
             width: MediaQuery.of(context).size.width - 50,
             decoration: BoxDecoration(
                 color: colorPrimary,
                 borderRadius: BorderRadius.all(Radius.circular(20))),
-            child: SizedBox(
-              height: 70,
+            child: Container(
+              color: Colors.transparent,
+              height: 65,
               width: MediaQuery.of(context).size.width,
               child:
                   Consumer<ApiProvider>(builder: (context, bottomMenu, widget) {
-                return SalomonBottomBar(
-                  currentIndex: bottomMenu.currentIndex, //_selectedIndex,
-                  selectedItemColor: colorAccent,
-                  unselectedItemColor: colorAccent,
-                  onTap: (i) async {
-                    AdHelper.showInterstitialAd();
+                return Theme(
+                  data: Theme.of(context)
+                      .copyWith(canvasColor: Colors.transparent),
+                  child: SalomonBottomBar(
+                    currentIndex: bottomMenu.currentIndex, //_selectedIndex,
+                    selectedItemColor: colorAccent,
+                    unselectedItemColor: colorAccent,
+                    onTap: (i) async {
+                      AdHelper.showInterstitialAd();
 
-                    if (bottomMenu.floatingValueCurrent == true) {
-                      bottomMenu.floatingOnOff(oldFloatingValue: false);
-                    }
-                    bottomMenu.changeBottomMenu(oldIndex: i);
-                    checkUserConnection().then((value) async {
-                      return {
-                        bottomMenu.changeUrl(
-                            oldUrl: bottomMenu.menuModel.result![i].url),
-                        activeConnection
-                            ? await webViewController!.loadUrl(
-                                urlRequest: URLRequest(
-                                    url: Uri.parse(
-                                        bottomMenu.currentUrl.toString())),
-                              )
-                            : null,
-                        // setState(() {}),
-                      };
-                    });
-                  },
-                  items: [
-                    for (int i = 0;
-                        i < bottomMenu.menuModel.result!.length;
-                        i++)
-                      SalomonBottomBarItem(
-                          icon: Image.network(
-                            bottomMenu.menuModel.result![i].image.toString(),
-                            height: 22,
-                            color: colorAccent,
-                          ),
-                          title: Text(
-                              bottomMenu.menuModel.result?[i].title
-                                      .toString() ??
-                                  "",
-                              style: TextStyle(color: colorAccent)))
-                  ],
+                      if (bottomMenu.floatingValueCurrent == true) {
+                        bottomMenu.floatingOnOff(oldFloatingValue: false);
+                      }
+                      bottomMenu.changeBottomMenu(oldIndex: i);
+                      checkUserConnection().then((value) async {
+                        return {
+                          bottomMenu.changeUrl(
+                              oldUrl: bottomMenu.menuModel.result![i].url),
+                          activeConnection
+                              ? await webViewController!.loadUrl(
+                                  urlRequest: URLRequest(
+                                      url: Uri.parse(
+                                          bottomMenu.currentUrl.toString())),
+                                )
+                              : null,
+                          // setState(() {}),
+                        };
+                      });
+                    },
+                    items: [
+                      for (int i = 0;
+                          i < bottomMenu.menuModel.result!.length;
+                          i++)
+                        SalomonBottomBarItem(
+                            icon: Image.network(
+                              bottomMenu.menuModel.result![i].image.toString(),
+                              height: 22,
+                              color: colorAccent,
+                            ),
+                            title: Text(
+                                bottomMenu.menuModel.result?[i].title
+                                        .toString() ??
+                                    "",
+                                style: TextStyle(color: colorAccent)))
+                    ],
+                  ),
                 );
               }),
             )),
       ],
     );
+  }
+
+  Future<bool> requestPermission() async {
+    final status = await Permission.storage.status;
+
+    if (status == PermissionStatus.granted) {
+      return true;
+    } else if (status != PermissionStatus.granted) {
+      //
+      final result = await Permission.storage.request();
+      if (result == PermissionStatus.granted) {
+        return true;
+      } else {
+        // await openAppSettings();
+        return false;
+      }
+    }
+    return true;
   }
 }

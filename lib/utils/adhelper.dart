@@ -28,11 +28,8 @@ class AdHelper {
   static var bannerad = "";
   static var banneradIos = "";
 
-  static var interstitalad = "";
-  static var iosinterstitalad = "";
-
-  static var rewardad = "";
-  static var iosrewardad = "";
+  static var interstialad = "";
+  static var interstialadIos = "";
 
   static RewardedAd? _rewardedAd;
 
@@ -50,20 +47,17 @@ class AdHelper {
     banneradid = await sharePref.read("banner_adid") ?? "";
     banneradid_ios = await sharePref.read("ios_banner_adid") ?? "";
 
-    bannerad = await sharePref.read("banner_ad") ?? "";
-    banneradIos = await sharePref.read("ios_banner_ad") ?? "";
-
-    interstitalad = await sharePref.read("interstital_ad") ?? "";
-    iosinterstitalad = await sharePref.read("ios_interstital_ad") ?? "";
-
     interstitaladid = await sharePref.read("interstital_adid") ?? "";
     interstitaladid_ios = await sharePref.read("ios_interstital_adid") ?? "";
 
-    rewardad = await sharePref.read("reward_ad") ?? "";
-    iosrewardad = await sharePref.read("ios_reward_ad") ?? "";
-
     rewardadid = await sharePref.read("reward_adid") ?? "";
     rewardadid_ios = await sharePref.read("ios_reward_adid") ?? "";
+
+    bannerad = await sharePref.read("banner_ad") ?? "";
+    banneradIos = await sharePref.read("ios_banner_ad") ?? "";
+
+    interstialad = await sharePref.read("interstital_ad") ?? "";
+    interstialadIos = await sharePref.read("ios_interstital_ad") ?? "";
 
     maxInterstitialAdclick =
         int.parse(await sharePref.read("interstital_adclick") ?? "0");
@@ -75,23 +69,40 @@ class AdHelper {
   }
 
   static BannerAd createBannerAd() {
-    BannerAd ad = BannerAd(
-        size: AdSize.largeBanner,
-        adUnitId: bannerAdUnitId,
-        request: const AdRequest(),
-        listener: BannerAdListener(
-            onAdLoaded: (Ad ad) => debugPrint('Ad Loaded'),
-            onAdClosed: (Ad ad) => debugPrint('Ad Closed'),
-            onAdFailedToLoad: (Ad ad, LoadAdError error) {
-              debugPrint('===> ${error.message.toString()}');
-              ad.dispose();
-            },
-            onAdOpened: (Ad ad) => debugPrint('Ad Open')));
-    return ad;
+    BannerAd? ad;
+    if (Platform.isAndroid && bannerad == '1') {
+      ad = BannerAd(
+          size: AdSize.banner,
+          adUnitId: bannerAdUnitId,
+          request: const AdRequest(),
+          listener: BannerAdListener(
+              onAdLoaded: (Ad ad) => log('Ad Loaded'),
+              onAdClosed: (Ad ad) => log('Ad Closed'),
+              onAdFailedToLoad: (Ad ad, LoadAdError error) {
+                ad.dispose();
+              },
+              onAdOpened: (Ad ad) => log('Ad Open')));
+      return ad;
+    }
+    if (Platform.isIOS && banneradIos == '1') {
+      ad = BannerAd(
+          size: AdSize.banner,
+          adUnitId: bannerAdUnitId,
+          request: const AdRequest(),
+          listener: BannerAdListener(
+              onAdLoaded: (Ad ad) => log('Ad Loaded'),
+              onAdClosed: (Ad ad) => log('Ad Closed'),
+              onAdFailedToLoad: (Ad ad, LoadAdError error) {
+                ad.dispose();
+              },
+              onAdOpened: (Ad ad) => log('Ad Open')));
+      return ad;
+    }
+    return ad!;
   }
 
   static void createInterstitialAd() {
-    if (interstitalad == "1" || iosinterstitalad == "1") {
+    if (Platform.isAndroid && interstialad == '1') {
       InterstitialAd.load(
           adUnitId: interstitialAdUnitId,
           request: const AdRequest(),
@@ -103,7 +114,23 @@ class AdHelper {
               ad.setImmersiveMode(true);
             },
             onAdFailedToLoad: (LoadAdError error) {
-              log('InterstitialAd failed to load: ${error.message}');
+              log('InterstitialAd failed to load: $error');
+            },
+          ));
+    }
+    if (Platform.isIOS && interstialadIos == '1') {
+      InterstitialAd.load(
+          adUnitId: interstitialAdUnitId,
+          request: const AdRequest(),
+          adLoadCallback: InterstitialAdLoadCallback(
+            onAdLoaded: (InterstitialAd ad) {
+              log('====> ads $ad');
+              _interstitialAd = ad;
+              _numInterstitialLoadAttempts = 0;
+              ad.setImmersiveMode(true);
+            },
+            onAdFailedToLoad: (LoadAdError error) {
+              log('InterstitialAd failed to load: $error');
             },
           ));
     }
@@ -115,21 +142,21 @@ class AdHelper {
     if (_numInterstitialLoadAttempts == maxInterstitialAdclick) {
       _numInterstitialLoadAttempts = 0;
       if (_interstitialAd == null) {
-        debugPrint('Warning: attempt to show interstitial before loaded.');
+        log('Warning: attempt to show interstitial before loaded.');
+
         return false;
       }
       _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
         onAdShowedFullScreenContent: (InterstitialAd ad) =>
-            debugPrint('ad onAdShowedFullScreenContent.'),
+            log('ad onAdShowedFullScreenContent.'),
         onAdDismissedFullScreenContent: (InterstitialAd ad) {
-          debugPrint('$ad onAdDismissedFullScreenContent.');
+          log('$ad onAdDismissedFullScreenContent.');
           ad.dispose();
           createInterstitialAd();
         },
         onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
-          debugPrint('$ad onAdFailedToShowFullScreenContent: $error');
+          log('$ad onAdFailedToShowFullScreenContent: $error');
           ad.dispose();
-
           createInterstitialAd();
         },
       );
@@ -141,46 +168,44 @@ class AdHelper {
   }
 
   static createRewardedAd() {
-    if (rewardad == "1" || iosrewardad == "1") {
-      RewardedAd.load(
-          adUnitId: rewardedAdUnitId,
-          request: const AdRequest(),
-          rewardedAdLoadCallback: RewardedAdLoadCallback(
-            onAdLoaded: (RewardedAd ad) {
-              debugPrint('$ad loaded.');
-              _rewardedAd = ad;
-              _numRewardAttempts = 0;
-            },
-            onAdFailedToLoad: (LoadAdError error) {
-              debugPrint('RewardedAd failed to load: $error');
-              _rewardedAd = null;
-              _numRewardAttempts += 1;
-              if (_numRewardAttempts <= maxRewardAdclick) {
-                createRewardedAd();
-              }
-            },
-          ));
-    }
+    RewardedAd.load(
+        adUnitId: rewardedAdUnitId,
+        request: const AdRequest(),
+        rewardedAdLoadCallback: RewardedAdLoadCallback(
+          onAdLoaded: (RewardedAd ad) {
+            log('$ad loaded.');
+            _rewardedAd = ad;
+            _numRewardAttempts = 0;
+          },
+          onAdFailedToLoad: (LoadAdError error) {
+            log('RewardedAd failed to load: $error');
+            _rewardedAd = null;
+            _numRewardAttempts += 1;
+            if (_numRewardAttempts <= maxRewardAdclick) {
+              createRewardedAd();
+            }
+          },
+        ));
   }
 
   static showRewardedAd() {
-    log('===>Att $_numRewardAttempts');
-    log('===>Click $maxRewardAdclick');
+    log('===>$_numRewardAttempts');
+    log('===>$maxRewardAdclick');
     if (_numRewardAttempts == maxRewardAdclick) {
       if (_rewardedAd == null) {
-        debugPrint('Warning: attempt to show rewarded before loaded.');
+        log('Warning: attempt to show rewarded before loaded.');
         return;
       }
       _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
         onAdShowedFullScreenContent: (RewardedAd ad) =>
-            debugPrint('ad onAdShowedFullScreenContent.'),
+            log('ad onAdShowedFullScreenContent.'),
         onAdDismissedFullScreenContent: (RewardedAd ad) {
-          debugPrint('$ad onAdDismissedFullScreenContent.');
+          log('$ad onAdDismissedFullScreenContent.');
           ad.dispose();
           createRewardedAd();
         },
         onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
-          debugPrint('$ad onAdFailedToShowFullScreenContent: ${error.message}');
+          log('$ad onAdFailedToShowFullScreenContent: $error');
           ad.dispose();
           createRewardedAd();
         },
@@ -189,8 +214,7 @@ class AdHelper {
       _rewardedAd!.setImmersiveMode(true);
       _rewardedAd!.show(
           onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-        debugPrint(
-            '$ad with reward $RewardItem(${reward.amount}, ${reward.type}');
+        log('$ad with reward $RewardItem(${reward.amount}, ${reward.type}');
       });
       _rewardedAd = null;
     }
