@@ -17,8 +17,8 @@ dependencies:
   flutter_svg: ^1.1.6
   google_fonts: ^4.0.3
   pin_code_fields: ^8.0.1
-  firebase_core: ^1.24.0
-  firebase_auth: ^1.10.6
+  firebase_core: ^2.10.0
+  firebase_auth: ^3.3.19
   google_sign_in: ^5.4.3
   flutter_facebook_auth: ^5.0.6
   provider: ^6.0.2
