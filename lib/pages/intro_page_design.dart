@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:provider/provider.dart';
+import 'package:webview/utils/adhelper.dart';
 import 'package:webview/utils/colors.dart';
 import 'package:webview/utils/sharedpre.dart';
 import 'package:webview/widgets/no_data.dart';
@@ -25,8 +26,13 @@ class _IntroPageState extends State<IntroPageDesign> {
   @override
   void initState() {
     super.initState();
+    getId();
     apiprovide = Provider.of<ApiProvider>(context, listen: false);
     apiprovide.getIntroList();
+  }
+
+  getId() async {
+    await AdHelper.getAds();
   }
 
   void onDonePress() async {

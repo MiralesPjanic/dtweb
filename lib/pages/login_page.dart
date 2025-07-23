@@ -11,6 +11,7 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:provider/provider.dart';
 import 'package:webview/pages/error_pages/facebook_auth_error.dart';
+import 'package:webview/utils/adhelper.dart';
 import 'package:webview/utils/colors.dart';
 import 'package:webview/utils/sharedpre.dart';
 import 'package:webview/pages/home_page.dart';
@@ -58,7 +59,12 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void initState() {
+    getId();
     super.initState();
+  }
+
+  getId() async {
+    await AdHelper.getAds();
   }
 
 // This class build Method-

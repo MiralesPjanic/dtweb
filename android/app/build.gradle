@@ -50,8 +50,8 @@ android {
 
     defaultConfig {
         applicationId "com.divinetechs.dtweb"
-        minSdkVersion 20
-        compileSdkVersion 32
+        minSdkVersion flutter.minSdkVersion
+        compileSdkVersion 33
         targetSdkVersion 30
         multiDexEnabled true
         versionCode flutterVersionCode.toInteger()
