@@ -25,7 +25,7 @@ dependencies:
   new_gradient_app_bar: ^0.2.0
   circular_profile_avatar: ^2.0.5
   badges: ^3.1.2
-  firebase_messaging: ^15.2.10
+  firebase_messaging: ^14.0.0
   intro_slider: ^4.2.5
   dio: ^5.8.0+1
   flutter_inappwebview: ^6.1.5
