@@ -29,7 +29,7 @@ dependencies:
   intro_slider: ^4.2.5
   dio: ^5.8.0+1
   flutter_inappwebview: ^5.7.1
-  dots_indicator: ^4.0.1
+  dots_indicator: ^2.0.0
   shrink_sidemenu: ^2.0.0+2
   salomon_bottom_bar: ^3.3.0
   intl_phone_field: ^3.1.0
